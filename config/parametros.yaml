@@ -1,0 +1,100 @@
+# Parámetros normativos y supuestos del simulador.
+# Cada parámetro tiene: valor, fuente y estado (verificado | por_verificar | pendiente).
+# Fecha de corte de la revisión: 2026-10-09. Detalle en docs/marco_normativo.md.
+
+fecha_corte: 2026-10-09
+
+smmlv:
+  valores:            # pesos corrientes
+    2025: 1423500
+    2026: 1750905
+  fuente: "Decreto 1469 de 2025; Decreto 0159 de 2026"
+  estado: por_verificar
+
+cotizacion:
+  tasa_total: 0.16
+  reparto_rais:
+    cuenta_individual: 0.115
+    fgpm: 0.015
+    administracion_y_seguro: 0.03
+  fuente: "Ley 100 de 1993 art. 20; Superfinanciera concepto 2021-0126207"
+  estado: verificado
+  ibc_min_smmlv: 1
+  ibc_max_smmlv: 25
+  ibc_independientes_pct_ingreso: 0.40
+  estado_topes: por_verificar
+
+fondo_solidaridad_pensional:   # aporte adicional al 16 %, no entra a la cuenta individual
+  tramos:                      # [IBC desde (en SMMLV), tasa total FSP]
+    - [4, 0.010]
+    - [16, 0.012]
+    - [17, 0.014]
+    - [18, 0.016]
+    - [19, 0.018]
+    - [20, 0.020]
+  fuente: "Ley 100 de 1993 art. 27, modificado por Ley 797 de 2003 art. 8"
+  estado: por_verificar
+
+rais:
+  capital_suficiente_pct_smmlv: 1.10
+  fuente_capital: "Ley 100 de 1993 art. 64"
+  garantia_pension_minima:
+    edad: {hombre: 62, mujer: 57}
+    semanas_hombre: 1150
+    semanas_mujer:             # C-054 de 2024: -15 por año desde 2026 hasta 1000
+      inicial: 1150
+      anio_inicio_reduccion: 2026
+      reduccion_anual: 15
+      minimo: 1000
+    fuente: "Ley 100 de 1993 art. 65; Sentencia C-054 de 2024"
+    estado: por_verificar      # tabla derivada de la regla de la sentencia
+  mesadas_por_anio: 13
+
+rpm:
+  edad: {hombre: 62, mujer: 57}
+  semanas_hombre: 1300
+  semanas_mujer:               # C-197 de 2023: -25 por año desde 2026 hasta 1000
+    inicial_2025: 1300
+    anio_inicio_reduccion: 2026
+    reduccion_anual: 25
+    minimo: 1000
+  ibl_anios: 10
+  tasa_reemplazo:              # r = base - pendiente * (IBL/SMMLV), en %
+    base: 65.50
+    pendiente: 0.50
+    piso: 55.0
+    techo: 65.0
+    incremento_por_50_semanas: 1.5
+    maximo_piso: 70.5
+    maximo_techo: 80.0
+  pension_min_smmlv: 1
+  pension_max_smmlv: 25
+  fuente: "Ley 100 de 1993 arts. 21, 33, 34 (Ley 797 de 2003); Sentencia C-197 de 2023"
+  estado: por_verificar
+
+reforma_2381:
+  vigencia_desde: 2027-04-01
+  umbral_prima_media_smmlv: 2.3
+  tope_ahorro_individual_smmlv: 25
+  transicion_semanas: {hombre: 900, mujer: 750}
+  fuente: "Ley 2381 de 2024; Sentencia C-264 de 2026; cartilla MinSalud"
+  estado: pendiente            # transición devuelta a la Cámara; fórmula de liquidación sin revisar
+
+mortalidad:
+  tabla: RV08
+  fuente: "Superfinanciera, Resolución 1555 de 2010"
+  estado: por_verificar        # confirmar que no haya sido reemplazada
+
+multifondos:
+  fondos: [mayor_riesgo, moderado, conservador, retiro_programado]
+  asignacion_por_defecto: null # tablas por edad y sexo en el Decreto 2555 de 2010, art. 2.6.11.1.6
+  fuente: "Decreto 959 de 2018, que modifica el Decreto 2555 de 2010"
+  estado: pendiente
+
+supuestos:                     # valores anuales; sujetos a análisis de sensibilidad
+  inflacion: 0.03
+  crecimiento_real_smmlv: 0.01
+  crecimiento_real_productividad: 0.01
+  tasa_tecnica_real: 0.04
+  semanas_por_mes: 4.2857
+

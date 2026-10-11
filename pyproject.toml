@@ -1,0 +1,16 @@
+[project]
+name = "pension-mc"
+version = "0.1.0"
+description = "Simulador Monte Carlo de pensiones en Colombia"
+requires-python = ">=3.11"
+dependencies = ["numpy", "pandas", "scipy", "statsmodels", "pyyaml", "plotly", "streamlit", "pyarrow"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
