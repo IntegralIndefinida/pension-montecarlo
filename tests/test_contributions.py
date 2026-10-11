@@ -18,7 +18,7 @@ def _modelo(pi=0.4, mu=0.1, beta=0.0):
 
 def test_desplazamiento_reproduce_la_tasa_promedio():
     pi = np.array([0.05, 0.3, 0.7, 0.95])
-    for beta in (0.0, 1.0, 3.0):
+    for beta in (0.0, 1.0, 3.0, 20.0):
         c = C._desplazamiento(pi, beta)
         media = [C._GH_W @ special.expit(ci + beta * C._GH_X) for ci in c]
         np.testing.assert_allclose(media, pi, atol=1e-8)
@@ -117,3 +117,26 @@ def test_cadena_sigue_una_tasa_que_cambia_con_la_edad_aun_con_poca_rotacion():
     x = m.simular(15, "Mujer", "Media", 55 * 12, 20_000, eta=eta, seed=6)
     objetivo = m.prob_individual(15 + np.arange(55 * 12) / 12, "Mujer", "Media", eta).mean(axis=0)
     assert np.max(np.abs(x.mean(axis=0) - objetivo)) < 0.015
+
+
+def test_eta_se_mueve_en_la_juventud_y_queda_fijo_despues():
+    m = _modelo(pi=0.4, mu=0.1, beta=2.0)
+    m.rho_eta, m.edad_fija_eta = 0.5, 35.0
+    eta0 = np.random.default_rng(1).standard_normal(2_000)
+    m.simular(20, "Mujer", "Media", 12 * 10, 2_000, eta=eta0, seed=2)        # 20 → 30: se mueve
+    assert np.corrcoef(eta0, m._eta_final)[0, 1] < 0.2
+    assert m._eta_final.std() == pytest.approx(1.0, abs=0.05)               # sigue siendo N(0, 1)
+    m.simular(40, "Mujer", "Media", 12 * 10, 2_000, eta=eta0, seed=2)        # 40 → 50: fijo
+    np.testing.assert_array_equal(m._eta_final, eta0)
+
+
+def test_eta_movil_debilita_el_condicionamiento_temprano():
+    rigido = _modelo(pi=0.4, mu=0.1, beta=4.0)
+    movil = _modelo(pi=0.4, mu=0.1, beta=4.0)
+    movil.rho_eta, movil.edad_fija_eta = 0.75, 35.0
+    brecha = {}
+    for nombre, m in (("rigido", rigido), ("movil", movil)):
+        alto, _ = m.condicionar(25, "Hombre", "Media", 300, 400, seed=3)
+        bajo, _ = m.condicionar(25, "Hombre", "Media", 0, 400, seed=3)
+        brecha[nombre] = alto.mean() - bajo.mean()
+    assert brecha["movil"] < brecha["rigido"]

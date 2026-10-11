@@ -3,7 +3,8 @@ Densidad de cotización: qué meses cotiza cada persona simulada.
 
 Cadena de Markov mensual de dos estados (cotiza / no cotiza) con heterogeneidad permanente:
 
-    π_i(a) = logística(c_k(a) + β·η_i),   η_i ~ N(0, 1)
+    π_i(a) = logística(c_k(a) + β·η_i(a)),   η_i(a) ~ N(0, 1)
+    η_i: AR(1) con persistencia anual ρ_η hasta los 35 años; fijo desde entonces
     P(dejar de cotizar) = s_t = μ(a)·(1 − π_i(a)),    μ(a) = μ₀·exp(−κ·(a − 40) / 10)
     P(empezar a cotizar) = f_t, tal que π_i,t+1 = π_i,t·(1 − s_t) + (1 − π_i,t)·f_t
 
@@ -17,8 +18,11 @@ se aumenta la salida. Con ``π`` constante, ``f = μ·π``: la cadena estacionar
   con ``κ > 0`` la rotación cae con la edad, como la de los empleos.
 - ``β`` fija la heterogeneidad de largo plazo: con β = 0 todos los del mismo tipo tienen la misma
   densidad esperada; con β grande unos cotizan casi siempre y otros casi nunca.
+- ``ρ_η`` permite que la propensión a cotizar cambie en la juventud (terminar de estudiar, primer
+  empleo formal) y se consolide después de los 35 años. Con η permanente, las pocas semanas de un
+  joven decidirían casi por completo su futuro (ver notebooks/04_cotizacion.ipynb).
 
-La GEIH es de corte transversal y no identifica ``(μ₀, κ, β)`` por sí sola. Se calibran con:
+La GEIH es de corte transversal y no identifica ``(μ₀, κ, β, ρ_η)`` por sí sola. Se calibran con:
 
 1. **Rotación de corto plazo** (MinTrabajo): cotizantes del mes / afiliados activos (cotizaron
    en alguno de los últimos 6 meses) ≈ 0,82.
@@ -27,9 +31,10 @@ La GEIH es de corte transversal y no identifica ``(μ₀, κ, β)`` por sí sola
    cotización dura al menos lo que el empleo, así que es una cota inferior: la calibración es
    conservadora en persistencia.
 
-La proporción de la población que alguna vez cotizó (afiliados / población ≈ 0,77) queda como
-momento no calibrado: el registro de afiliados incluye inactivos que ya no están en el país o
-fallecieron, y ese momento depende de episodios de un mes que casi no pesan en las semanas.
+3. **Alguna vez cotizó** (MinTrabajo y GEIH): afiliados / población de 18 a 70 años ≈ 0,77. Es una
+   cota superior (el registro incluye afiliados fallecidos o fuera del país); identifica ρ_η.
+
+Los cuatro momentos se reproducen con un error máximo de ~0,02.
 """
 
 from __future__ import annotations
@@ -96,9 +101,10 @@ def _desplazamiento(pi: np.ndarray, beta: float) -> np.ndarray:
     if beta == 0:
         return special.logit(pi)
     out = np.empty_like(pi, dtype=float)
+    cota = 40 + abs(beta) * np.abs(_GH_X).max()          # el intervalo crece con β
     for i, p in enumerate(np.clip(pi, 1e-6, 1 - 1e-6)):
         f = lambda c: _GH_W @ special.expit(c + beta * _GH_X) - p
-        out[i] = optimize.brentq(f, -40, 40)
+        out[i] = optimize.brentq(f, -cota, cota)
     return out
 
 
@@ -110,6 +116,8 @@ class ModeloCotizacion:
     beta: float
     calibracion: dict | None = None
     kappa: float = 0.0
+    rho_eta: float = 1.0                 # persistencia anual de η (1 = permanente)
+    edad_fija_eta: float = 200.0         # desde esta edad η deja de moverse
 
     def rotacion(self, edad) -> np.ndarray:
         """μ(a) = μ₀·exp(−κ(a − 40)/10), acotada a 1 para que las probabilidades sean válidas."""
@@ -131,31 +139,50 @@ class ModeloCotizacion:
 
     def simular(self, edad_inicial: float, sexo: str, educ: str, n_meses: int, n_sims: int, *,
                 eta: np.ndarray | None = None, estado_inicial: np.ndarray | None = None,
-                seed: int | None = None, uniformes: np.ndarray | None = None) -> np.ndarray:
+                seed: int | None = None, uniformes: np.ndarray | None = None,
+                edad_tope: float | None = None, sin_cotizar: np.ndarray | None = None) -> np.ndarray:
         """
         Estados ``(n_sims, n_meses)``: ``True`` si la persona cotiza ese mes.
 
         ``eta`` y ``estado_inicial`` permiten continuar una historia (ver :meth:`condicionar`).
         ``uniformes`` (``(n_sims, n_meses)``) permite usar números aleatorios comunes.
+        ``edad_tope`` congela la tasa y la rotación en las de esa edad (p. ej. para quien sigue
+        trabajando después de los 55). ``sin_cotizar`` (``(n_meses,)`` booleano) fuerza meses sin
+        cotizar: la cadena sigue desde "no cotiza", así que la laguna también afecta lo que viene.
         """
         rng = np.random.default_rng(seed)
-        eta = rng.standard_normal(n_sims) if eta is None else np.asarray(eta)
+        eta = rng.standard_normal(n_sims) if eta is None else np.asarray(eta, dtype=float).copy()
         u = rng.random((n_sims, n_meses)) if uniformes is None else uniformes
         edad_mes = edad_inicial + np.arange(n_meses) / 12
-        pi = self.prob_individual(edad_mes, sexo, educ, eta)
+        if edad_tope is not None:
+            edad_mes = np.minimum(edad_mes, edad_tope)
+        forzado = np.zeros(n_meses, bool) if sin_cotizar is None else np.asarray(sin_cotizar, bool)
+        c = np.interp(edad_mes, self.edades, self.desplazamiento(sexo, educ))
         mu = self.rotacion(edad_mes)
+        phi = self.rho_eta ** (1 / 12)                        # persistencia mensual de η
+        movil = phi < 1 and edad_mes[0] < self.edad_fija_eta
+        mueve = edad_mes < self.edad_fija_eta
+        choques = rng.standard_normal((n_sims, n_meses)) if movil else None
+        acotar = lambda z: np.clip(special.expit(z), 1e-9, 1 - 1e-9)
+        p1 = acotar(c[0] + self.beta * eta)
         estados = np.empty((n_sims, n_meses), dtype=bool)
-        x = u[:, 0] < pi[:, 0] if estado_inicial is None else np.asarray(estado_inicial, bool)
+        x = u[:, 0] < p1 if estado_inicial is None else np.asarray(estado_inicial, bool)
+        x = x & ~forzado[0]
         estados[:, 0] = x
+        self._eta_final = eta
         for t in range(1, n_meses):
-            p0, p1 = pi[:, t - 1], pi[:, t]
+            p0 = p1
+            if movil and mueve[t]:
+                eta = phi * eta + np.sqrt(1 - phi**2) * choques[:, t]
+            p1 = acotar(c[t] + self.beta * eta)
             sale = mu[t] * (1 - p0)
             entra = (p1 - p0 * (1 - sale)) / (1 - p0)
             cae = entra < 0                       # la tasa baja más rápido que la salida natural
             sale = np.where(cae, 1 - p1 / p0, sale)
             entra = np.clip(entra, 0, 1)
-            x = np.where(x, u[:, t] >= sale, u[:, t] < entra)
+            x = np.where(x, u[:, t] >= sale, u[:, t] < entra) & ~forzado[t]
             estados[:, t] = x
+        self._eta_final = eta                                 # η al final (para continuar una historia)
         return estados
 
     def condicionar(self, edad: float, sexo: str, educ: str, semanas: float, n_sims: int, *,
@@ -177,10 +204,11 @@ class ModeloCotizacion:
             lote = max(4 * n_sims, 5_000)
             eta = rng.standard_normal(lote)
             h = self.simular(EDAD_INICIO, sexo, educ, n_hist, lote, eta=eta, seed=rng.integers(1 << 32))
+            eta_hoy = self._eta_final
             ok = np.abs(h.sum(axis=1) * sem_mes - semanas) <= tolerancia
             if cotiza_hoy is not None:
                 ok &= h[:, -1] == cotiza_hoy
-            etas.append(eta[ok]); estados.append(h[ok, -1])
+            etas.append(eta_hoy[ok]); estados.append(h[ok, -1])
             aceptadas += ok.sum(); intentos += 1
         if aceptadas == 0:
             raise ValueError("Ninguna historia simulada es compatible con esas semanas; aumente la tolerancia")
@@ -255,37 +283,52 @@ def momentos(modelo: ModeloCotizacion, poblacion: dict[str, np.ndarray], *, n_po
 
 def calibrar(tasas: dict[str, np.ndarray], poblacion: dict[str, np.ndarray], *,
              objetivo_ratio: float = 0.82, objetivos_periodo: dict[tuple[int, int], float] | None = None,
-             n_por_tipo: int = 3_000, seed: int = 0, x0=(0.4, 0.5, 6.0)) -> ModeloCotizacion:
+             objetivo_alguna_vez: float | None = None, edad_fija_eta: float = 200.0,
+             n_por_tipo: int = 3_000, seed: int = 0, x0=(0.3, 1.0, 7.0, 0.8),
+             diff_step: float = 0.05) -> ModeloCotizacion:
     """
-    Busca (μ₀, κ, β) que reproducen la rotación y la duración de los periodos por edad
-    (números aleatorios comunes). Con un solo grupo de edad se fija κ = 0 y se calibran (μ₀, β).
+    Calibra por simulación (números aleatorios comunes) los parámetros de la cadena:
+
+    - rotación ``μ₀`` y su caída con la edad ``κ`` (κ = 0 si hay un solo grupo de duración);
+    - heterogeneidad ``β``;
+    - persistencia anual de η, ``ρ_η``, solo si se da ``objetivo_alguna_vez`` (si no, η es permanente).
+      η se mueve hasta ``edad_fija_eta`` y queda fijo después.
     """
     objetivos_periodo = objetivos_periodo or {(25, 44): 0.463, (45, 64): 0.726}
     grupos = tuple(objetivos_periodo)
     edades = list(range(EDAD_INICIO, EDAD_FIN + 1))
     tasas = {k: np.asarray(v).tolist() for k, v in tasas.items()}
     con_kappa = len(grupos) > 1
+    con_rho = objetivo_alguna_vez is not None
 
     def modelo(p):
-        mu, beta = np.exp(p[0]), np.exp(p[-1])
-        return ModeloCotizacion(edades, tasas, mu, beta, kappa=p[1] if con_kappa else 0.0)
+        p = list(p)
+        mu, kappa = np.exp(p.pop(0)), (p.pop(0) if con_kappa else 0.0)
+        beta = np.exp(p.pop(0))
+        rho = 1 - np.exp(p.pop(0)) if con_rho else 1.0
+        return ModeloCotizacion(edades, tasas, mu, beta, kappa=kappa, rho_eta=rho,
+                                edad_fija_eta=edad_fija_eta if con_rho else 200.0)
 
     def resid(p):
         m = momentos(modelo(p), poblacion, n_por_tipo=n_por_tipo, seed=seed, grupos_periodo=grupos)
-        return [m["cotizantes_sobre_activos"] - objetivo_ratio,
-                *(m[f"periodo_{a}_{b}"] - v for (a, b), v in objetivos_periodo.items())]
+        r = [m["cotizantes_sobre_activos"] - objetivo_ratio,
+             *(m[f"periodo_{a}_{b}"] - v for (a, b), v in objetivos_periodo.items())]
+        if con_rho:
+            r.append(m["alguna_vez"] - objetivo_alguna_vez)
+        return r
 
+    x, lb, ub = [np.log(x0[0])], [np.log(1e-3)], [np.log(0.95)]
     if con_kappa:
-        x = [np.log(x0[0]), x0[1], np.log(x0[2])]
-        lb, ub = [np.log(1e-3), -3.0, np.log(1e-2)], [np.log(0.95), 5.0, np.log(15.0)]
-    else:
-        x = [np.log(x0[0]), np.log(x0[2])]
-        lb, ub = [np.log(1e-3), np.log(1e-2)], [np.log(0.95), np.log(15.0)]
-    r = optimize.least_squares(resid, x0=x, diff_step=0.05, bounds=(lb, ub))
+        x, lb, ub = x + [x0[1]], lb + [-3.0], ub + [5.0]
+    x, lb, ub = x + [np.log(x0[2])], lb + [np.log(1e-2)], ub + [np.log(20.0)]
+    if con_rho:
+        x, lb, ub = x + [np.log(1 - x0[3])], lb + [np.log(1e-4)], ub + [np.log(0.5)]
+    r = optimize.least_squares(resid, x0=x, diff_step=diff_step, bounds=(lb, ub))
     m = modelo(r.x)
     mom = momentos(m, poblacion, n_por_tipo=n_por_tipo, seed=seed, grupos_periodo=grupos)
     m.calibracion = {"objetivo_ratio": objetivo_ratio,
-                     **{f"objetivo_periodo_{a}_{b}": v for (a, b), v in objetivos_periodo.items()}, **mom}
+                     **{f"objetivo_periodo_{a}_{b}": v for (a, b), v in objetivos_periodo.items()},
+                     **({"objetivo_alguna_vez": objetivo_alguna_vez} if con_rho else {}), **mom}
     return m
 
 
@@ -308,6 +351,10 @@ def estimar(geih: pd.DataFrame | None = None, guardar: bool = True, **kwargs) ->
     obs = tasas_observadas(geih)
     tasas = suavizar(obs)
     kwargs.setdefault("objetivos_periodo", {g: objetivo_periodo(geih, edades=g) for g in GRUPOS_PERIODO})
+    kwargs.setdefault("objetivo_alguna_vez", 0.77)
+    kwargs.setdefault("edad_fija_eta", 35.0)
+    kwargs.setdefault("x0", (0.28, 0.47, 6.19, 0.816))
+    kwargs.setdefault("diff_step", 0.15)
     m = calibrar(tasas, poblacion_por_tipo(obs), **kwargs)
     if guardar:
         m.guardar()

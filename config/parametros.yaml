@@ -155,10 +155,10 @@ salarios:                      # modelo salarial (paso 4); estimación completa 
 
 densidad_cotizacion:           # modelo de cotización (paso 5); detalle en data/processed/modelo_cotizacion.json
   tasas: "GEIH 2023-2025, proporción de la población que cotiza por educación × sexo × edad (logit con spline)"
-  parametros: {mu0: 0.1941, kappa: 0.8277, beta: 4.0911}
-  objetivos:
-    cotizantes_sobre_activos: {valor: 0.82, fuente: "MinTrabajo, datos.gov.co sk9s-yxmi (columnas de las AFP invertidas)", estado: por_verificar}
-    periodo_3_anios_25_44: {valor: 0.4626, fuente: "GEIH P6426, cotizantes con >= 36 meses en el empleo"}
-    periodo_3_anios_45_64: {valor: 0.7262, fuente: "GEIH P6426, cotizantes con >= 36 meses en el empleo"}
-  no_calibrado:
-    alguna_vez_cotizo: {modelo: 0.614, dato: 0.77, fuente: "afiliados MinTrabajo / población GEIH 18-70"}
+  parametros: {mu0: 0.2344, kappa: 0.2918, beta: 6.7597, rho_eta: 0.7787, edad_fija_eta: 35}
+  objetivos:                   # [dato, modelo]
+    cotizantes_sobre_activos: {dato: 0.82, modelo: 0.838, fuente: "MinTrabajo, datos.gov.co sk9s-yxmi (columnas de las AFP invertidas)", estado: por_verificar}
+    periodo_3_anios_25_44: {dato: 0.463, modelo: 0.439, fuente: "GEIH P6426, cotizantes con >= 36 meses en el empleo"}
+    periodo_3_anios_45_64: {dato: 0.726, modelo: 0.733, fuente: "GEIH P6426, cotizantes con >= 36 meses en el empleo"}
+    alguna_vez_cotizo: {dato: 0.77, modelo: 0.754, fuente: "afiliados MinTrabajo / población GEIH 18-70 (cota superior)"}
+  supuesto_clave: "η se consolida a los 35 años (a los 45 la proporción que alcanza las semanas baja de 40 % a 35 %)"
