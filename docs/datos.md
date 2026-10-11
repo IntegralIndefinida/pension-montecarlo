@@ -31,7 +31,7 @@ Los archivos crudos quedan en `data/raw/` y los procesados en `data/processed/` 
 | `ipc_mensual.parquet` | mes | `fecha`, `ipc`, `inflacion_mensual`, `inflacion_anual` |
 | `smmlv_anual.parquet` | año | `anio`, `smmlv`, `inflacion_dic_anterior`, `var_nominal`, `var_real` |
 | `mortalidad_rv08.parquet` | sexo × edad | `sexo`, `edad`, `lx`, `dx`, `qx`, `ex` |
-| `geih_pensiones.parquet` | persona-mes (15–70 años) | variables armonizadas de `dane-data` + `estado_pension`, `cotiza`, `independiente` |
+| `geih_pensiones.parquet` | persona-mes (15–70 años) | variables armonizadas de `dane-data` + `estado_pension`, `cotiza`, `independiente`, `antiguedad_empleo` |
 
 ## Decisiones de procesamiento
 
@@ -43,6 +43,7 @@ Los archivos crudos quedan en `data/raw/` y los procesados en `data/processed/` 
    - `cotiza` = 1 si la persona está ocupada y cotiza (P6920 = 1); 0 en cualquier otro caso, *incluidos desocupados e inactivos*. Su promedio por edad es la probabilidad mensual de aportar.
    - `estado_pension` distingue Cotiza / No cotiza / Pensionado (entre ocupados) y No ocupado.
    - `independiente` marca a cuentapropistas y patrones, que cotizan sobre el 40 % del ingreso.
+   - `antiguedad_empleo` (P6426) son los meses continuos en el empleo actual de los ocupados. Para un cotizante es una cota inferior de cuánto lleva cotizando sin interrupción.
    - Las etiquetas de posición ocupacional (P6430) del cuestionario de 2022 en adelante (7 = jornalero, 8 = otro) vienen corregidas desde `dane-data` (commit `cf5fcd1`).
 
 ## Limitaciones

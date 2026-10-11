@@ -39,6 +39,9 @@ def preparar(df: pd.DataFrame) -> pd.DataFrame:
     # cotiza: 1 si es ocupado y cotiza; 0 en cualquier otro caso. Base: población, no ocupados.
     out["cotiza"] = (ocupado & (p6920 == 1)).astype("int8")
     out["independiente"] = out["posicion_ocupacional"].isin(INDEPENDIENTES).astype("int8").where(ocupado)
+    # P6426: meses continuos en el empleo actual (cota inferior del periodo de cotización actual)
+    p6426 = pd.to_numeric(df["P6426"], errors="coerce") if "P6426" in df else np.nan
+    out["antiguedad_empleo"] = pd.Series(p6426, index=df.index).where(ocupado).to_numpy()
     return out.reset_index(drop=True)
 
 
@@ -46,7 +49,7 @@ def procesar(anios=ANIOS) -> pd.DataFrame:
     partes = []
     for anio in anios:
         log.info("GEIH %d: cargando con dane-data", anio)
-        partes.append(preparar(dd.geih.load(anio)))
+        partes.append(preparar(dd.geih.load(anio, columns=["P6426"])))
     df = pd.concat(partes, ignore_index=True)
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
     df.to_parquet(DATA_PROCESSED / "geih_pensiones.parquet", index=False)

@@ -141,3 +141,64 @@ Para cada tipo y edad (25, 40, 55) se simula una sección transversal y se compa
 - **La división entre $\alpha$ y $z$ está débilmente identificada** por tipo. Imponer una $\rho$ común empeora mucho el ajuste de la varianza (hasta 0,46 en log), así que se mantienen los ajustes por tipo. La división solo afecta la simulación condicionada en el salario actual.
 - Después de los 50–55 años la dispersión estimada baja en algunos grupos (salida selectiva). El AR(1) no puede reproducir una varianza decreciente y la sobreestima un poco cerca del retiro.
 - El error de medición del ingreso declarado queda dentro del componente permanente, y no se corrige la selección (solo se observa a quienes cotizan).
+
+## 3. Densidad de cotización
+
+Módulo `pension_mc.contributions`. Estimación, calibración y validación en [`notebooks/04_cotizacion.ipynb`](../notebooks/04_cotizacion.ipynb).
+
+### Tasas por edad
+
+$\pi_k(a)$ es la proporción de la **población** del tipo $k$ (educación × sexo) que cotiza a la edad $a$, en la GEIH 2023–2025 ponderada. Los desocupados e inactivos cuentan como "no cotiza". Se suaviza con un logit binomial y un spline cúbico natural de 7 grados de libertad por tipo.
+
+### Cadena de Markov con heterogeneidad
+
+Para la persona $i$ del tipo $k$, con $\eta_i \sim N(0, 1)$ permanente:
+
+$$
+\pi_i(a) = \text{logística}\big(c_k(a) + \beta\,\eta_i\big), \qquad E_\eta[\pi_i(a)] = \pi_k(a)
+$$
+
+$c_k(a)$ se obtiene por cuadratura de Gauss-Hermite. Cada mes:
+
+$$
+s_t = \mu(a)\,(1 - \pi_{i,t}), \qquad f_t = \frac{\pi_{i,t+1} - \pi_{i,t}(1 - s_t)}{1 - \pi_{i,t}}, \qquad \mu(a) = \mu_0\, e^{-\kappa (a-40)/10}
+$$
+
+donde $s$ es la probabilidad de dejar de cotizar y $f$ la de empezar. $f$ hace que la probabilidad marginal de cada persona siga exactamente su $\pi_i(a)$; si la tasa cae más rápido de lo que permite $s$, se usa $s = 1 - \pi_{t+1}/\pi_t$. Con $\pi$ constante, $f = \mu\pi$, y la autocorrelación mensual del estado es $1 - \mu$.
+
+- $\beta$: heterogeneidad de largo plazo. Con $\beta$ grande, la densidad individual es bimodal (unos cotizan casi siempre, otros casi nunca).
+- $\mu_0, \kappa$: rotación de corto plazo y su caída con la edad.
+
+### Calibración
+
+La GEIH no sigue a las personas, así que $(\mu_0, \kappa, \beta)$ se calibran por simulación con números aleatorios comunes, reproduciendo exactamente tres momentos:
+
+| Momento | Dato | Fuente |
+|---|---|---|
+| Cotizantes del mes / activos (cotizaron en los últimos 6 meses) | 0,82 | MinTrabajo (`sk9s-yxmi`); en las AFP las columnas parecen invertidas, y así el total coincide con los cotizantes de la GEIH (10,7 vs. 10,3 millones) |
+| Cotizantes de 25–44 años con ≥ 36 meses en el empleo actual | 0,46 | GEIH (P6426) |
+| Ídem, 45–64 años | 0,73 | GEIH (P6426) |
+
+Un periodo de cotización dura al menos lo que el empleo actual, así que la antigüedad es una **cota inferior** y la calibración es conservadora en persistencia. Resultado: $\mu_0 = 0{,}19$, $\kappa = 0{,}83$, $\beta = 4{,}1$; la rotación mensual cae de ~0,7 a los 25 años a ~0,05 a los 55.
+
+**Momento no calibrado:** el modelo implica que el 61 % de la población de 18 a 70 años cotizó alguna vez, frente al 77 % que dan los afiliados registrados. El registro incluye inactivos fallecidos o fuera del país.
+
+### Lo que se aprendió en la validación
+
+1. **Con solo rotación + "alguna vez cotizó"** ($\beta = 1{,}4$, $\mu$ constante), los periodos simulados eran mucho más cortos que la antigüedad observada en el empleo: 31 % vs. 46–73 % con 3 años o más. Esa calibración subestima en ~4 puntos la proporción que alcanza las semanas.
+2. **Con $\mu$ constante**, el modelo quedaba por debajo de la antigüedad observada desde los 45 años. Por eso se agregó $\kappa$.
+3. **Con la cadena estacionaria simple** ($f = \mu\pi$), una rotación baja hacía que la cadena siguiera con rezago la caída de la tasa antes del retiro (errores de 9 puntos). La entrada $f_t$ que sigue la trayectoria eliminó ese rezago.
+
+### Sensibilidad
+
+En todas las variantes que respetan la antigüedad (rotación 0,79–0,88, duración +5 puntos, $\mu$ constante), la proporción que alcanza las semanas de la garantía de pensión mínima, con la composición educativa de los jóvenes, queda entre el 36 % y el 39 %. El resultado depende sobre todo de la heterogeneidad de largo plazo, y la antigüedad la ancla.
+
+### Condicionamiento en la historia
+
+`condicionar(edad, sexo, educ, semanas)` muestrea $(\eta, \text{estado actual})$ por rechazo: simula historias desde los 15 años y conserva las que acumulan las semanas reportadas (±25). Quien ya cotizó mucho tiene un $\eta$ alto y probablemente seguirá cotizando.
+
+### Limitaciones
+
+- Las tasas son de corte transversal: no hay tendencia de formalización ni efectos de cohorte.
+- $\eta$ no está correlacionado con el salario del paso 4.
+- No se distingue entre asalariados e independientes (más rotación, IBC del 40 %).
