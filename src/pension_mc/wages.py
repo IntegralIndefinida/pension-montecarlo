@@ -209,7 +209,7 @@ class ModeloSalarial:
         g = parametros()["supuestos"]["crecimiento_real_productividad"] if crecimiento is None else crecimiento
         s_a, s_e, rho = self.ar[clave(educ, sexo)]
         edades = edad + np.arange(n_anios)
-        f = self.log_media(edades, sexo, educ)
+        f = self.log_media(np.minimum(edades, EDAD_MAX), sexo, educ)   # el perfil se estimó hasta los 65
         v_z = varianza_ar(edad, 0.0, s_e, rho)
         v_u = s_a**2 + v_z
 

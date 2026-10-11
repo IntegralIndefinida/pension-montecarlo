@@ -274,3 +274,61 @@ Sin las semanas: indemnización sustitutiva = IBC semanal promedio × semanas ×
 - **Renta vitalicia** valorada a la tasa técnica: no se simula el retiro programado año a año.
 - **Sin bono pensional ni traslados** entre regímenes.
 - **Perfiles con historia:** el saldo actual lo informa la persona (o se aproxima con las semanas), y el IBL de Colpensiones usa solo el periodo simulado.
+
+## 5. Motor de simulación
+
+Módulo `pension_mc.simulate`. Análisis en [`notebooks/06_motor.ipynb`](../notebooks/06_motor.ipynb).
+
+```python
+from pension_mc.simulate import Perfil, Supuestos, simular, tornado
+
+perfil = Perfil(edad=30, sexo="Mujer", educacion="Superior", salario=3_500_000,
+                semanas=250, cotiza_hoy=True)
+r = simular(perfil, Supuestos(), n_sims=10_000)
+r.resumen()          # probabilidades, mesadas, semanas, saldo, costo de la garantía, Colpensiones
+r.afp, r.colpensiones  # una fila por simulación
+```
+
+### Flujo de una simulación
+
+1. **Salarios** (paso 4): trayectoria anual condicionada en el salario actual, con piso de 1 SMMLV. El IBC es el salario, o el 40 % del ingreso para independientes, con tope de 25 SMMLV.
+2. **Cotización** (paso 5): condicionada en las semanas ya cotizadas y en si cotiza hoy. Admite lagunas forzadas y congelar la tasa desde una edad (para quien sigue trabajando después de los 55).
+3. **Rentabilidad** (paso 3): bootstrap estacionario, t multivariada o escenario determinista; trayectoria de multifondos por defecto o un fondo fijo; ajuste de la media e incertidumbre de la media opcionales.
+4. **Saldo y reglas** (paso 6): aplica a la misma población las reglas de las AFP y de Colpensiones.
+
+### Perfil y supuestos
+
+| `Perfil` | Descripción |
+|---|---|
+| `edad`, `sexo`, `educacion` | Definen el tipo (perfil salarial y de cotización) |
+| `salario`, `semanas`, `cotiza_hoy`, `saldo` | Historia actual; sin `saldo` se aproxima con las semanas |
+| `independiente` | Cotiza sobre el 40 % del ingreso |
+| `edad_retiro`, `fondo`, `aporte_voluntario_pct` | Decisiones del afiliado |
+| `laguna`, `conyuge_diferencia_edad` | Experimentos y beneficiario |
+
+| `Supuestos` | Base |
+|---|---|
+| `metodo_rentabilidad`, `ajuste_rentabilidad`, `incertidumbre_media` | bootstrap, 0, no |
+| `tasa_tecnica`, `crecimiento_smmlv`, `crecimiento_salarios` | 4 %, 1 %, 1 % |
+| `cotizacion` | calibración base (consolidación a los 30); alternativas en `CALIBRACIONES_COTIZACION` |
+| `seed` | 2026 |
+
+### Números aleatorios
+
+Cada componente recibe una semilla derivada de `Supuestos.seed` con `numpy.random.SeedSequence`:
+- **Misma semilla:** dos escenarios comparten los números aleatorios, así que sus diferencias se deben al supuesto y no al ruido.
+- **Semillas distintas:** las corridas son independientes. Con 10.000 simulaciones, el error de una probabilidad es ~0,5 puntos, igual al binomial teórico.
+
+Una primera versión usaba `seed + k` por componente, y las semillas consecutivas compartían flujos.
+
+### Análisis
+
+- `comparar(escenarios)`: tabla de resúmenes.
+- `tornado(perfil, variaciones)`: sensibilidad uno a uno sobre campos de `Supuestos` o del `Perfil`.
+
+### Limitaciones del motor
+
+- La mesada media no descuenta los años de pensión que se pierden al retirarse más tarde.
+- La comparación AFP vs. Colpensiones aplica ambas reglas a la misma persona.
+- Sin bono pensional ni beneficiarios por defecto.
+- El escenario de la reforma pensional (Ley 2381 de 2024) aún no está implementado.
