@@ -158,7 +158,7 @@ $$
 \pi_i(a) = \text{logística}\big(c_k(a) + \beta\,\eta_i(a)\big), \qquad E_\eta[\pi_i(a)] = \pi_k(a)
 $$
 
-- $\eta_i(a) \sim N(0,1)$ sigue un AR(1) con persistencia anual $\rho_\eta$ **hasta los 35 años** y queda fijo después: la situación laboral se forma en la juventud y se consolida con la edad.
+- $\eta_i(a) \sim N(0,1)$ sigue un AR(1) con persistencia anual $\rho_\eta$ **hasta los 30 años** y queda fijo después: la situación laboral se forma en la juventud y se consolida con la edad. La edad de consolidación se estima (ver abajo).
 - $c_k(a)$ se obtiene por cuadratura de Gauss-Hermite.
 
 Cada mes:
@@ -175,19 +175,21 @@ La GEIH no sigue a las personas, así que $(\mu_0, \kappa, \beta, \rho_\eta)$ se
 
 | Momento | Dato | Modelo | Fuente |
 |---|---|---|---|
-| Cotizantes del mes / activos (últimos 6 meses) | 0,82 | 0,84 | MinTrabajo (`sk9s-yxmi`); en las AFP las columnas parecen invertidas, y así el total coincide con los cotizantes de la GEIH |
-| Cotizantes de 25–44 años con ≥ 36 meses en el empleo actual | 0,46 | 0,44 | GEIH (P6426), cota inferior |
+| Cotizantes del mes / activos (últimos 6 meses) | 0,82 | 0,82 | MinTrabajo (`sk9s-yxmi`); en las AFP las columnas parecen invertidas, y así el total coincide con los cotizantes de la GEIH |
+| Cotizantes de 25–44 años con ≥ 36 meses en el empleo actual | 0,46 | 0,46 | GEIH (P6426), cota inferior |
 | Ídem, 45–64 años | 0,73 | 0,74 | GEIH (P6426), cota inferior |
-| Alguna vez cotizó (afiliados / población de 18 a 70 años) | 0,77 | 0,75 | MinTrabajo y GEIH, cota superior |
+| Alguna vez cotizó (afiliados / población de 18 a 70 años) | 0,77 | 0,77 | MinTrabajo y GEIH, cota superior |
 
-Resultado: $\mu_0 = 0{,}23$, $\kappa = 0{,}29$, $\beta = 6{,}8$, $\rho_\eta = 0{,}78$. Los parámetros no están bien identificados por separado (varios puntos de partida dan combinaciones distintas con errores similares), pero los resultados sí lo están: varían menos de un punto entre esas soluciones.
+Resultado: $\mu_0 = 0{,}30$, $\kappa = 0{,}58$, $\beta = 6{,}2$, $\rho_\eta = 0{,}70$; error máximo de 0,2 puntos.
+
+**Edad de consolidación.** Se recalibra el modelo con edades de 25 a 40 años. Los mejores ajustes están entre 28 y 32 años (error cuadrático medio de 0,002 a los 30); desde los 35 el ajuste empeora (0,012) y a los 40 es malo (0,032). Se usa 30. Los parámetros no están bien identificados por separado (otras combinaciones dan errores similares), pero los resultados sí lo están.
 
 ### Lo que se aprendió en la validación
 
 1. **Con solo rotación + "alguna vez cotizó"** ($\beta = 1{,}4$, η permanente), los periodos de cotización simulados eran mucho más cortos que la antigüedad observada en el empleo (31 % vs. 46–73 % con 3 años o más).
 2. **Con rotación constante,** los periodos de los mayores quedaban por debajo de su antigüedad. Por eso se agregó $\kappa$.
 3. **Con la cadena estacionaria simple** ($f = \mu\pi$), una rotación baja hacía que la cadena siguiera con rezago la caída de la tasa antes del retiro. La entrada $f_t$ que sigue la trayectoria eliminó ese rezago.
-4. **Con η permanente,** las semanas de un joven decidían su destino. A los 25 años, tener 0 o 100 semanas era tener 1 % o 93 % de probabilidad de pensionarse, porque quien no cotizó entre los 18 y los 25 quedaba marcado para siempre. Este problema apareció al probar el motor (paso 7). Con η móvil hasta los 35 la probabilidad queda entre 39 % y 49 %, y el modelo reproduce además "alguna vez cotizó", que con η permanente no lograba (61 %). Con η móvil a *todas* las edades no es posible reproducir los periodos largos de los 45–64 años.
+4. **Con η permanente,** las semanas de un joven decidían su destino. A los 25 años, tener 0 o 100 semanas era tener 1 % o 93 % de probabilidad de pensionarse, porque quien no cotizó entre los 18 y los 25 quedaba marcado para siempre. Este problema apareció al probar el motor (paso 7). Con η móvil en la juventud la probabilidad queda entre 41 % y 53 %, y el modelo reproduce además "alguna vez cotizó", que con η permanente no lograba (61 %). Con η móvil a *todas* las edades no es posible reproducir los periodos largos de los 45–64 años.
 
 ### Sensibilidad
 
@@ -195,12 +197,11 @@ Con la composición educativa de los jóvenes, la proporción que alcanza las se
 
 | Variante | Proporción |
 |---|---|
-| Base | 39,7 % |
-| Rotación 0,79–0,86, duración +5 puntos, alguna vez 0,70 | 39,5–40,9 % |
-| η se consolida a los 45 años | 35,1 % |
+| Base (consolidación a los 30) | 39,8 % |
+| Consolidación entre los 25 y los 35 | 39,1–40,3 % |
+| Rotación 0,79–0,86, duración +5 puntos, alguna vez 0,70 | 38,4–40,3 % |
+| Consolidación a los 40 (mal ajuste) | 37,2 % |
 | η permanente | 34–37 % |
-
-La edad de consolidación es el supuesto más influyente.
 
 ### Condicionamiento en la historia
 
@@ -208,7 +209,6 @@ La edad de consolidación es el supuesto más influyente.
 
 ### Limitaciones
 
-- La edad de consolidación de η (35) es un supuesto.
 - Entre los 25 y los 34 años, el modelo genera más rotación de la que sugiere la antigüedad observada. Puede subestimar algo la cotización de los jóvenes.
 - Las tasas son de corte transversal: no hay tendencia de formalización.
 - $\eta$ no está correlacionado con el salario del paso 4.

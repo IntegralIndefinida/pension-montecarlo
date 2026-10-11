@@ -4,7 +4,7 @@ Densidad de cotización: qué meses cotiza cada persona simulada.
 Cadena de Markov mensual de dos estados (cotiza / no cotiza) con heterogeneidad permanente:
 
     π_i(a) = logística(c_k(a) + β·η_i(a)),   η_i(a) ~ N(0, 1)
-    η_i: AR(1) con persistencia anual ρ_η hasta los 35 años; fijo desde entonces
+    η_i: AR(1) con persistencia anual ρ_η hasta los 30 años; fijo desde entonces
     P(dejar de cotizar) = s_t = μ(a)·(1 − π_i(a)),    μ(a) = μ₀·exp(−κ·(a − 40) / 10)
     P(empezar a cotizar) = f_t, tal que π_i,t+1 = π_i,t·(1 − s_t) + (1 − π_i,t)·f_t
 
@@ -19,7 +19,7 @@ se aumenta la salida. Con ``π`` constante, ``f = μ·π``: la cadena estacionar
 - ``β`` fija la heterogeneidad de largo plazo: con β = 0 todos los del mismo tipo tienen la misma
   densidad esperada; con β grande unos cotizan casi siempre y otros casi nunca.
 - ``ρ_η`` permite que la propensión a cotizar cambie en la juventud (terminar de estudiar, primer
-  empleo formal) y se consolide después de los 35 años. Con η permanente, las pocas semanas de un
+  empleo formal) y se consolide después de los 30 años (edad elegida por ajuste). Con η permanente, las pocas semanas de un
   joven decidirían casi por completo su futuro (ver notebooks/04_cotizacion.ipynb).
 
 La GEIH es de corte transversal y no identifica ``(μ₀, κ, β, ρ_η)`` por sí sola. Se calibran con:
@@ -352,8 +352,8 @@ def estimar(geih: pd.DataFrame | None = None, guardar: bool = True, **kwargs) ->
     tasas = suavizar(obs)
     kwargs.setdefault("objetivos_periodo", {g: objetivo_periodo(geih, edades=g) for g in GRUPOS_PERIODO})
     kwargs.setdefault("objetivo_alguna_vez", 0.77)
-    kwargs.setdefault("edad_fija_eta", 35.0)
-    kwargs.setdefault("x0", (0.28, 0.47, 6.19, 0.816))
+    kwargs.setdefault("edad_fija_eta", 30.0)       # mejor ajuste en una rejilla de 25 a 40 años
+    kwargs.setdefault("x0", (0.30, 0.58, 6.19, 0.70))
     kwargs.setdefault("diff_step", 0.15)
     m = calibrar(tasas, poblacion_por_tipo(obs), **kwargs)
     if guardar:
