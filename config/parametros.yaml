@@ -87,9 +87,19 @@ mortalidad:
 
 multifondos:
   fondos: [mayor_riesgo, moderado, conservador, retiro_programado]
-  asignacion_por_defecto: null # tablas por edad y sexo en el Decreto 2555 de 2010, art. 2.6.11.1.6
-  fuente: "Decreto 959 de 2018, que modifica el Decreto 2555 de 2010"
-  estado: pendiente
+  # Escalones [edad desde, proporción]: el valor rige desde esa edad hasta el siguiente escalón.
+  # Afiliados que no eligen fondo: % de aportes y saldo en mayor riesgo; el resto va al moderado.
+  mayor_riesgo_por_defecto:
+    mujer:  [[0, 1.0], [42, 0.8], [43, 0.6], [44, 0.4], [45, 0.2], [46, 0.0]]
+    hombre: [[0, 1.0], [47, 0.8], [48, 0.6], [49, 0.4], [50, 0.2], [51, 0.0]]
+  fuente_por_defecto: "Decreto 2555 de 2010 art. 2.6.11.1.5, modificado por el Decreto 959 de 2018"
+  # Saldo mínimo en el conservador (convergencia); el resto queda en el moderado.
+  # Tabla original 50-54 (mujeres) y 55-59 (hombres) + 2 años desde 2014 (parágrafo 2).
+  conservador_minimo:
+    mujer:  [[0, 0.0], [52, 0.2], [53, 0.4], [54, 0.6], [55, 0.8], [56, 1.0]]
+    hombre: [[0, 0.0], [57, 0.2], [58, 0.4], [59, 0.6], [60, 0.8], [61, 1.0]]
+  fuente_convergencia: "Decreto 2555 de 2010 art. 2.6.11.1.6 y parágrafo 2 (texto compilado, Cancillería)"
+  estado: verificado
 
 supuestos:                     # valores anuales; sujetos a análisis de sensibilidad
   inflacion: 0.03
@@ -98,3 +108,13 @@ supuestos:                     # valores anuales; sujetos a análisis de sensibi
   tasa_tecnica_real: 0.04
   semanas_por_mes: 4.2857
 
+rentabilidades:                # opciones por defecto del modelo de rentabilidades (paso 3)
+  afp: Protección
+  metodo: bootstrap            # bootstrap | t | determinista
+  largo_bloque: null           # null = óptimo de Politis-White (~1,4 meses con los datos actuales)
+  incertidumbre_media: false   # true en el análisis de sensibilidad
+  media_objetivo: null         # p. ej. {moderado: 0.035}; null = media histórica
+  calibracion:                 # Protección, feb-2016 a sep-2026 (notebooks/02_rentabilidades.ipynb)
+    nu_t_multivariada: 4
+    media_real_anual: {mayor_riesgo: 0.0410, moderado: 0.0371, conservador: 0.0233, retiro_programado: 0.0282}
+    error_estandar_media: {mayor_riesgo: 0.0271, moderado: 0.0206, conservador: 0.0180, retiro_programado: 0.0193}

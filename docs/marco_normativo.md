@@ -129,8 +129,28 @@ Se implementa como **referencia de comparación** (beneficio definido, sin cuent
 | Conservador | Renta fija; para afiliados cercanos al retiro |
 | Retiro programado | Para pensionados en esa modalidad |
 
-- **Asignación por defecto:** el Decreto 959 de 2018 (que modifica el Decreto 2555 de 2010) asigna a quienes no eligen fondo entre **mayor riesgo y moderado según sexo y edad**, con **convergencia gradual** hacia el moderado y luego hacia el conservador al acercarse a la edad de pensión.
-- ❓ **Pendiente:** las tablas de porcentajes por edad están como imagen en la norma compilada. Leerlas directamente en el art. 2.6.11.1.6 y siguientes del Decreto 2555 de 2010 (Función Pública / SUIN-Juriscol).
+- **Asignación por defecto** (art. 2.6.11.1.5 del Decreto 2555 de 2010, modificado por el Decreto 959 de 2018): quienes no eligen fondo van al **mayor riesgo** y convergen gradualmente al **moderado**. ✅ La tabla coincide con el comunicado de la Superfinanciera de 2019 sobre mujeres menores de 42 años.
+
+  | Mujeres | Hombres | Mayor riesgo | Moderado |
+  |---|---|---|---|
+  | < 42 | < 47 | 100 % | 0 % |
+  | 42 | 47 | 80 % | 20 % |
+  | 43 | 48 | 60 % | 40 % |
+  | 44 | 49 | 40 % | 60 % |
+  | 45 | 50 | 20 % | 80 % |
+  | 46–51 | 51–56 | 0 % | 100 % |
+
+- **Convergencia al conservador** (art. 2.6.11.1.6): el saldo converge anualmente al **conservador**, y el resto queda en el moderado. La tabla original empieza a los 50 años (mujeres) y 55 (hombres); el **parágrafo 2 suma dos años desde 2014**. ✅
+
+  | Mujeres | Hombres | Saldo mínimo en el conservador |
+  |---|---|---|
+  | 52 | 57 | 20 % |
+  | 53 | 58 | 40 % |
+  | 54 | 59 | 60 % |
+  | 55 | 60 | 80 % |
+  | 56 o más | 61 o más | 100 % |
+
+  Las reglas aplican a quien no eligió fondo; un afiliado puede pedir más porcentaje en el conservador o cambiar de fondo cada 6 meses (art. 2.6.11.1.7).
 - **Fuente de datos de rentabilidad:** valor de unidad de los fondos de pensiones obligatorias, publicado por la Superfinanciera (se trabaja en el paso 2 del plan). El esquema multifondos opera desde ~2011, lo que limita la historia disponible.
 
 ---
@@ -182,7 +202,7 @@ Todas estas exclusiones se declaran en la pestaña de metodología de la app.
 
 - [ ] Sentencia C-264 de 2026: texto, artículos devueltos y resultado del trámite en la Cámara.
 - [ ] Texto oficial de la Ley 2381 de 2024: fórmula del componente de prima media y reparto de la cotización.
-- [ ] Decreto 2555 de 2010, art. 2.6.11.1.6 y siguientes: tablas de asignación por defecto de multifondos.
+- [x] Decreto 2555 de 2010, arts. 2.6.11.1.5 y 2.6.11.1.6: tablas de asignación por defecto y convergencia de multifondos.
 - [ ] Resolución 1555 de 2010: descargar la tabla RV08 y confirmar que sigue vigente.
 - [ ] Semanas de las mujeres (RAIS 2026: 1.135; RPM 2026: 1.250): confirmar con la Superfinanciera / Colpensiones.
 - [ ] SMMLV 2026: confirmar la vigencia del Decreto 0159 de 2026.
@@ -202,6 +222,8 @@ Todas estas exclusiones se declaran en la pestaña de metodología de la app.
 - Superfinanciera, [Concepto 2021-0126207 (reparto de la cotización)](https://normativa.colpensiones.gov.co/compilacion/docs/concepto_superfinanciera_0126207_2021.htm)
 - Superfinanciera, [Resolución 1555 de 2010 (tablas RV08)](https://normativa.colpensiones.gov.co/compilacion/docs/resolucion_superfinanciera_1555_2010.htm)
 - Colpensiones (normativa), [Decreto 959 de 2018 (multifondos)](https://normativa.colpensiones.gov.co/compilacion/docs/decreto_0959_2018.htm)
+- Actualícese, [Decreto 959 de 2018 (tablas)](https://actualicese.com/archivo/decreto-959-de-05-06-2018/)
+- Cancillería (compilación), [Decreto 2555 de 2010, art. 2.6.11.1.6](https://cancilleria.gov.co/normograma/compilacion/docs/decreto_2555_2010.htm)
 - Corte Constitucional, [Sentencia C-054 de 2024](https://ambitojuridico.com/sites/default/files/2024-05/Sent-C-054-24.pdf)
 - La Nota Económica / Porvenir, [Cambio de semanas para mujeres desde 2026](https://lanotaeconomica.com.co/movidas-empresarial/porvenir-explica-como-cambiaran-los-requisitos-de-semanas-para-pension-de-vejez-de-mujeres-a-partir-de-2026/)
 - El Heraldo, [Entra en vigor reducción de semanas para mujeres desde 2026](https://www.elheraldo.co/colombia/2026/01/02/entra-en-vigor-reduccion-de-semanas-para-la-pension-de-mujeres-desde-2026-asi-funcionara/)

@@ -1,6 +1,6 @@
 # Simulador estocástico de pensiones (Monte Carlo), Colombia
 
-> 🚧 En construcción. Pasos 1 y 2 de 10: marco normativo y datos.
+> 🚧 En construcción. Pasos 1 a 3 de 10: marco normativo, datos y rentabilidades.
 
 ¿Cuál es la **distribución** de la pensión futura de un afiliado al sistema pensional colombiano, considerando la incertidumbre en las rentabilidades, los salarios y la densidad de cotización?
 
@@ -16,7 +16,7 @@ pytest
 
 - [x] Marco normativo: [`docs/marco_normativo.md`](docs/marco_normativo.md) y parámetros en [`config/parametros.yaml`](config/parametros.yaml)
 - [x] Datos: `python -m pension_mc.data` ([`docs/datos.md`](docs/datos.md)) y análisis exploratorio en [`notebooks/01_eda.ipynb`](notebooks/01_eda.ipynb)
-- [ ] Rentabilidades
+- [x] Rentabilidades: `pension_mc.returns` ([`docs/metodologia.md`](docs/metodologia.md#1-rentabilidades)) y validación en [`notebooks/02_rentabilidades.ipynb`](notebooks/02_rentabilidades.ipynb)
 - [ ] Perfil salarial
 - [ ] Densidad de cotización
 - [ ] Acumulación, desacumulación y regímenes
