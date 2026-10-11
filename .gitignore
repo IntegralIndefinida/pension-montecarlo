@@ -6,3 +6,4 @@ data/raw/*
 data/processed/*
 !data/**/.gitkeep
 .pytest_cache/
+*.egg-info/

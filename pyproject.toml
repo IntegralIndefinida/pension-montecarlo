@@ -3,7 +3,8 @@ name = "pension-mc"
 version = "0.1.0"
 description = "Simulador Monte Carlo de pensiones en Colombia"
 requires-python = ">=3.11"
-dependencies = ["numpy", "pandas", "scipy", "statsmodels", "pyyaml", "plotly", "streamlit", "pyarrow"]
+dependencies = ["numpy", "pandas", "scipy", "statsmodels", "pyyaml", "requests", "plotly", "streamlit", "pyarrow",
+                "dane-data @ git+https://github.com/IntegralIndefinida/DANE-data"]
 
 [project.optional-dependencies]
 dev = ["pytest"]
