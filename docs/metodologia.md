@@ -79,3 +79,65 @@ La rentabilidad del portafolio es $\sum_j w_{t,j}\, r_{s,t,j}$, rebalanceado cad
 - Solo 10,7 años de historia, con dos episodios extremos: el COVID (marzo de 2020) y el choque de inflación y tasas (2021–2022).
 - Las rentabilidades son las del valor de unidad, es decir, netas de los costos que se descuentan del fondo. La comisión de administración se cobra sobre el aporte (sección 2 del marco normativo), así que no afecta este cálculo.
 - No se modelan cambios futuros en el régimen de inversión de los fondos.
+
+## 2. Salarios
+
+Módulo `pension_mc.wages`. Estimación y validación en [`notebooks/03_salarios.ipynb`](../notebooks/03_salarios.ipynb).
+
+### Datos
+
+Cotizantes de 18 a 65 años con ingreso laboral positivo, GEIH 2022–2025 (583.208 personas-mes), con el ingreso deflactado a pesos de septiembre de 2026. Los tipos $k$ son las combinaciones de educación (primaria o menos, secundaria, media, superior) × sexo.
+
+### Modelo
+
+Para el log del salario **latente** de la persona $i$ a la edad $a$:
+
+$$
+\ln w^*_{ia} = f_k(a) + g\,t + \alpha_i + z_{ia}, \qquad
+z_{ia} = \rho_k z_{i,a-1} + \varepsilon_{ia}, \quad z_{i,17} = 0
+$$
+
+$$
+\alpha_i \sim N(0, \sigma_{\alpha,k}^2), \qquad \varepsilon_{ia} \sim N(0, \sigma_{\varepsilon,k}^2)
+$$
+
+- $f_k(a)$: perfil cuadrático en la edad para cada tipo, con el nivel del último año estimado (2025).
+- $g$: crecimiento real de la productividad (supuesto, 1 % anual).
+- El salario observado es $w = \max(w^*, \text{SMMLV})$, y el IBC es `clip(w, 1, 25) × SMMLV` (40 % del ingreso para independientes).
+
+### Estimación
+
+**Paso 1: Tobit heterocedástico.** Se considera que gana el mínimo quien declara hasta el mínimo + el auxilio de transporte + 2 % del mínimo: en la GEIH hay amontonamiento en 1,00 y en 1,12–1,16 SMMLV, y el auxilio no hace parte del IBC. Son el 41 % de los cotizantes, así que se estima por máxima verosimilitud:
+
+$$
+y^* = X\beta + e^{Z\gamma} u, \quad u \sim N(0, 1); \qquad
+\ell_i = \begin{cases} \ln \Phi\!\left(\frac{c_i - X_i\beta}{s_i}\right) & \text{si } y_i \le c_i \\ -\ln s_i + \ln \phi\!\left(\frac{y_i - X_i\beta}{s_i}\right) & \text{si no} \end{cases}
+$$
+
+ponderando con el factor de expansión. $X$ tiene $[1, e, e^2]$ por tipo ($e = (a-40)/10$) y efectos de año; $Z$ tiene $[1, e, e^2]$ por tipo. Se usan gradientes analíticos y L-BFGS-B. Sin la censura con auxilio (umbral de 1,05 SMMLV), los errores de validación son casi el doble.
+
+**Paso 2: persistencia.** Con $z$ en cero a los 17 años, la varianza de $\alpha + z$ crece con la edad:
+
+$$
+\sigma_k(a)^2 = \sigma_{\alpha,k}^2 + \sigma_{\varepsilon,k}^2 \frac{1 - \rho_k^{2(a-17)}}{1 - \rho_k^2}
+$$
+
+$(\sigma_\alpha, \sigma_\varepsilon, \rho)$ se ajustan por tipo a la $\sigma_k(a)$ del Tobit entre los 20 y los 64 años (mínimos cuadrados en logaritmos; Deaton y Paxson, 1994). Resultados: $\rho$ entre 0,95 y 0,995 (choques casi permanentes); en educación superior, $\sigma_\varepsilon$ es 2 a 3 veces mayor.
+
+### Simulación
+
+Frecuencia anual: el salario de un año rige sus 12 meses.
+
+- **Sin salario actual:** $\alpha \sim N(0, \sigma_\alpha^2)$ y $z_a \sim N(0, v_z(a))$.
+- **Con salario actual $w_0$:** el desvío $u = \ln w_0 - f_k(a)$ se reparte entre $\alpha$ y $z$ según sus varianzas: $\alpha \mid u \sim N\!\left(u\,\sigma_\alpha^2 / v_u,\; \sigma_\alpha^2 v_z / v_u\right)$ y $z = u - \alpha$. Si $w_0$ es el mínimo, $u$ se sortea de la normal truncada por debajo del umbral.
+
+### Validación
+
+Para cada tipo y edad (25, 40, 55) se simula una sección transversal y se compara con la GEIH 2025: el error medio es de 1,8 % en la mediana y de 6,6 % en el P90, y la proporción en el mínimo queda sobreestimada en ~3 puntos.
+
+### Limitaciones
+
+- El perfil es de corte transversal: mezcla efectos de edad y de cohorte.
+- **La división entre $\alpha$ y $z$ está débilmente identificada** por tipo. Imponer una $\rho$ común empeora mucho el ajuste de la varianza (hasta 0,46 en log), así que se mantienen los ajustes por tipo. La división solo afecta la simulación condicionada en el salario actual.
+- Después de los 50–55 años la dispersión estimada baja en algunos grupos (salida selectiva). El AR(1) no puede reproducir una varianza decreciente y la sobreestima un poco cerca del retiro.
+- El error de medición del ingreso declarado queda dentro del componente permanente, y no se corrige la selección (solo se observa a quienes cotizan).
