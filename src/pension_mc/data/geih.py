@@ -6,7 +6,6 @@ Usa ``dane-data``: los microdatos deben estar descargados (``dane-data estado``)
 
 from __future__ import annotations
 
-import dane_data as dd
 import numpy as np
 import pandas as pd
 
@@ -46,6 +45,8 @@ def preparar(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def procesar(anios=ANIOS) -> pd.DataFrame:
+    import dane_data as dd   # dependencia opcional (extra "datos")
+
     partes = []
     for anio in anios:
         log.info("GEIH %d: cargando con dane-data", anio)

@@ -34,7 +34,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from .config import DATA_PROCESSED, parametros
+from .config import ARTEFACTOS, parametros
 
 FONDOS = ["mayor_riesgo", "moderado", "conservador", "retiro_programado"]
 AFP_POR_DEFECTO = "Protección"
@@ -83,7 +83,7 @@ class Rentabilidades:
 # --------------------------------------------------------------------------- Datos históricos
 def historico(afp: str = AFP_POR_DEFECTO, fondos=FONDOS) -> pd.DataFrame:
     """Rentabilidades reales mensuales históricas ``(fecha × fondo)`` de una AFP."""
-    m = pd.read_parquet(DATA_PROCESSED / "rentabilidad_mensual.parquet")
+    m = pd.read_parquet(ARTEFACTOS / "rentabilidad_mensual.parquet")
     m = m[(m["afp"] == afp) & m["fondo"].isin(fondos)].dropna(subset=["r_real"])
     if m.empty:
         raise ValueError(f"No hay rentabilidades para {afp!r}")

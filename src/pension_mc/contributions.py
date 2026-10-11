@@ -46,12 +46,12 @@ import numpy as np
 import pandas as pd
 from scipy import optimize, special
 
-from .config import DATA_PROCESSED, parametros
+from .config import ARTEFACTOS, DATA_PROCESSED, parametros
 from .wages import EDUCACION, NIVELES, SEXOS, clave
 
 EDAD_INICIO, EDAD_FIN = 15, 70
 ANIOS_TASAS = (2023, 2024, 2025)
-ARCHIVO = DATA_PROCESSED / "modelo_cotizacion.json"
+ARCHIVO = ARTEFACTOS / "modelo_cotizacion.json"
 _GH_X, _GH_W = np.polynomial.hermite_e.hermegauss(40)   # cuadratura para E[f(η)], η ~ N(0, 1)
 _GH_W = _GH_W / _GH_W.sum()
 

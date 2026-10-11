@@ -6,7 +6,7 @@ import pytest
 from pension_mc import accumulation as A
 from pension_mc import decumulation as D
 from pension_mc import regimes as G
-from pension_mc.config import DATA_PROCESSED
+from pension_mc.config import ARTEFACTOS
 
 
 @pytest.fixture
@@ -39,11 +39,11 @@ def test_factor_responde_a_tasa_crecimiento_y_conyuge(mortalidad_lineal):
     np.testing.assert_allclose(D.mesada(np.array([base * 2]), 62, "Hombre", tasa=0.04), [2.0])
 
 
-@pytest.mark.skipif(not (DATA_PROCESSED / "mortalidad_rv08.parquet").exists(), reason="sin datos RV08")
+@pytest.mark.skipif(not (ARTEFACTOS / "mortalidad_rv08.parquet").exists(), reason="sin datos RV08")
 def test_factor_con_rv08_coincide_con_la_esperanza_de_vida():
     import pandas as pd
     D.factor_anualidad.cache_clear()
-    t = pd.read_parquet(DATA_PROCESSED / "mortalidad_rv08.parquet").set_index(["sexo", "edad"])
+    t = pd.read_parquet(ARTEFACTOS / "mortalidad_rv08.parquet").set_index(["sexo", "edad"])
     for sexo, edad in [("Mujer", 57), ("Hombre", 62)]:
         anios = D.factor_anualidad(edad, sexo, tasa=0.0) * 12 / 13 / 12
         # pagos anticipados mensuales: e(x) completa + ~1/24 de año
@@ -89,7 +89,7 @@ def test_rais_clasifica_capital_garantia_y_devolucion(mortalidad_lineal):
     f = D.factor_anualidad(57, "Mujer", 0.04, 0.0)
     saldo = np.array([3 * smmlv * f, 0.5 * smmlv * f_min, 0.5 * smmlv * f_min])
     semanas = np.array([300.0, 1100.0, 900.0])
-    r = G.rais(saldo, semanas, edad=57, sexo="Mujer", anio=2040, smmlv=smmlv, tasa=0.04, crecimiento_smmlv=0.01)
+    r = G.rais(saldo, semanas, edad=57, sexo="Mujer", anio=2040, smmlv=smmlv, tasa=0.04, crecimiento_beneficios=0.01)
     assert list(r["estado"]) == ["capital_suficiente", "garantia_minima", "devolucion"]
     np.testing.assert_allclose(r["mesada"], [300.0, 100.0, 0.0])
     np.testing.assert_allclose(r["costo_garantia"], [0, 0.5 * smmlv * f_min, 0])
@@ -130,3 +130,24 @@ def test_rpm_pension_con_piso_e_indemnizacion():
     assert r["mesada"].iloc[0] == pytest.approx(smmlv)        # 65 % del IBL < mínimo → piso
     semanas = 200 * 30 / 7
     assert r["indemnizacion"].iloc[1] == pytest.approx(100 / (30 / 7) * semanas * 0.13)
+
+
+def test_rpm_reproduce_un_caso_real_liquidado_por_un_tribunal():
+    """
+    Tribunal Superior de Valledupar, rad. 20001-31-05-001-2020-00138-01 (Valle Martínez vs.
+    Colpensiones): pensión de 2018, IBL de $3.002.929, SMMLV de $781.242 y 1.323 semanas
+    (mínimo 1.300). El tribunal confirma r = 65,50 − 0,50·3,84 = 63,58 % y una mesada inicial
+    de $1.909.262; las 23 semanas extra no alcanzan un tramo de 50.
+    """
+    ibl, smmlv = 3_002_929.0, 781_242.0
+    r = G.tasa_reemplazo_rpm(np.array([ibl]), np.array([1323.0]), 1300, smmlv)[0]
+    assert round(r * 100, 2) == 63.58
+    assert ibl * round(r, 4) == pytest.approx(1_909_262, abs=1)
+
+
+def test_rais_usa_el_crecimiento_regulatorio_de_beneficios_por_defecto(mortalidad_lineal):
+    from pension_mc.config import parametros
+    g = parametros()["rais"]["crecimiento_beneficios_capital"]
+    saldo = np.array([1.001, 0.999]) * 100.0 * D.factor_anualidad(57, "Mujer", 0.04, g)
+    r = G.rais(saldo, np.array([0.0, 0.0]), edad=57, sexo="Mujer", anio=2040, smmlv=100.0, tasa=0.04)
+    assert list(r["estado"]) == ["capital_suficiente", "devolucion"]

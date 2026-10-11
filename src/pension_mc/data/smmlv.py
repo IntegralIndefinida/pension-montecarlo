@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pandas as pd
-from dane_data.referencias import SMLV
 
 from ..config import DATA_PROCESSED, parametros
 
@@ -15,6 +14,8 @@ def procesar(ipc: pd.DataFrame) -> pd.DataFrame:
     El crecimiento real descuenta la inflación de diciembre del año anterior, que es
     la referencia con la que se negocia el aumento.
     """
+    from dane_data.referencias import SMLV   # dependencia opcional (extra "datos")
+
     df = pd.DataFrame(sorted(SMLV.items()), columns=["anio", "smmlv"])
     for anio, valor in parametros()["smmlv"]["valores"].items():
         if SMLV.get(anio) != valor:

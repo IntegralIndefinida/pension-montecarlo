@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..config import DATA_PROCESSED, DATA_RAW
+from ..config import ARTEFACTOS, DATA_PROCESSED, DATA_RAW
 from ._http import get, log
 
 DATASET = "uawh-cjvi"
@@ -88,4 +88,6 @@ def procesar(ipc: pd.DataFrame, archivo: Path | None = None) -> tuple[pd.DataFra
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
     d.to_parquet(DATA_PROCESSED / "valor_unidad_diario.parquet", index=False)
     m.to_parquet(DATA_PROCESSED / "rentabilidad_mensual.parquet", index=False)
+    ARTEFACTOS.mkdir(parents=True, exist_ok=True)
+    m.to_parquet(ARTEFACTOS / "rentabilidad_mensual.parquet", index=False)
     return d, m

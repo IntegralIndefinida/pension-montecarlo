@@ -63,7 +63,7 @@ $$
 \delta_s \sim N\!\left(0,\; S / T\right), \qquad x^{sim}_{s,t} \leftarrow x^{sim}_{s,t} + \delta_s
 $$
 
-que corresponde a la distribución muestral del promedio, con la correlación entre fondos. A 50 años, la incertidumbre de la media domina sobre la volatilidad mensual. Por ejemplo, el rango P5–P95 de la rentabilidad anualizada del moderado pasa de ~2–5 % a ~0–8 %. Es una cota superior, porque ignora toda información distinta de estos 10 años. Se usa en el análisis de sensibilidad, no en el caso base.
+que corresponde a la distribución muestral del promedio, con la correlación entre fondos. A 50 años, la incertidumbre de la media domina sobre la volatilidad mensual. Por ejemplo, el rango P5–P95 de la rentabilidad anualizada del moderado pasa de ~2–5 % a ~0–8 %. Es una cota superior, porque ignora toda información distinta de estos 10 años. **Está activada en el caso base del motor** desde la validación fuera de muestra (sección 6): sin ella, el intervalo P10–P90 a 36 meses contuvo lo realizado solo en el 50 % de las ventanas.
 
 ### Multifondos por edad
 
@@ -238,7 +238,7 @@ $$
 
 - Tablas RV08 con supervivencia interpolada linealmente entre edades enteras.
 - $i$: tasa técnica real (4 %, supuesto).
-- $g$: crecimiento real de la mesada: 0 para pensiones indexadas al IPC y el crecimiento del SMMLV para la pensión mínima.
+- $g$: crecimiento real de la mesada: 0 para pensiones indexadas al IPC; para la pensión mínima, el crecimiento regulatorio de los beneficios con que la AFP verifica la suficiencia (2,53 %; ver abajo).
 - Con cónyuge beneficiario (100 %): ${}_tp = {}_tp_x + {}_tp_y - {}_tp_x\,{}_tp_y$.
 
 Verificación: con $i = 0$, $F \cdot 12/13/12$ coincide con la esperanza de vida de la RV08.
@@ -247,11 +247,13 @@ Verificación: con $i = 0$, $F \cdot 12/13/12$ coincide con la esperanza de vida
 
 | Situación al llegar a la edad de pensión | Resultado |
 |---|---|
-| $S \ge \text{SMMLV} \cdot F(x; g = g_{\text{SMMLV}})$ | Capital suficiente: mesada $= S / F(x; 0)$ |
+| $S \ge \text{SMMLV} \cdot F(x; g = g_{\text{reg}})$ | Capital suficiente: mesada $= S / F(x; 0)$ |
 | Si no, con la edad y las semanas de la garantía de pensión mínima | Mesada = 1 SMMLV; el Estado paga $\text{SMMLV} \cdot F - S$ |
 | En otro caso | Devolución de saldos |
 
 **Sobre el art. 64.** El texto exige capital para una pensión mayor al 110 % del SMMLV **de 1993 reajustado por IPC**, umbral muy inferior al SMMLV actual. Como ninguna pensión puede ser menor que el mínimo (art. 35), la AFP verifica con el Saldo de Pensión Mínima si el saldo financia 1 SMMLV vitalicio (Res. MinHacienda 3099 de 2015, modificada por la 3023 de 2017). Esa es la regla que se implementa.
+
+**Crecimiento regulatorio de los beneficios ($g_{\text{reg}}$).** La AFP verifica la suficiencia con los parámetros del art. 4 de la Res. 3099 de 2015, entre ellos el crecimiento de los beneficios. La Res. 1045 de 2026 lo define como el promedio de los últimos 12 años de la diferencia entre el aumento del SMMLV y el IPC de diciembre anterior, sin el mayor ni el menor. Con los datos de 2015–2026 resulta en 2,53 % real. Es un parámetro normativo, distinto del supuesto económico de crecimiento del SMMLV (1 %). Con él, el capital para 1 SMMLV vitalicio es de 309 SMMLV para una mujer de 57 años, cerca de la referencia de mercado de 330 SMMLV.
 
 ### Reglas en Colpensiones
 
@@ -308,8 +310,9 @@ r.afp, r.colpensiones  # una fila por simulación
 
 | `Supuestos` | Base |
 |---|---|
-| `metodo_rentabilidad`, `ajuste_rentabilidad`, `incertidumbre_media` | bootstrap, 0, no |
+| `metodo_rentabilidad`, `ajuste_rentabilidad`, `incertidumbre_media` | bootstrap, 0, sí (desde el paso 8) |
 | `tasa_tecnica`, `crecimiento_smmlv`, `crecimiento_salarios` | 4 %, 1 %, 1 % |
+| `crecimiento_beneficios` (test de capital suficiente) | 2,53 % (regulatorio) |
 | `cotizacion` | calibración base (consolidación a los 30); alternativas en `CALIBRACIONES_COTIZACION` |
 | `seed` | 2026 |
 
@@ -332,3 +335,23 @@ Una primera versión usaba `seed + k` por componente, y las semillas consecutiva
 - La comparación AFP vs. Colpensiones aplica ambas reglas a la misma persona.
 - Sin bono pensional ni beneficiarios por defecto.
 - El escenario de la reforma pensional (Ley 2381 de 2024) aún no está implementado.
+
+## 6. Validación
+
+Notebook [`07_validacion.ipynb`](../notebooks/07_validacion.ipynb). Integración continua: `.github/workflows/ci.yml` corre las pruebas y una simulación de humo en Python 3.11, 3.12 y 3.13. Instala solo el motor, que usa los modelos versionados en `artefactos/`, sin la GEIH ni `dane-data`.
+
+| Tipo | Qué se comparó | Resultado |
+|---|---|---|
+| Casos exactos | Liquidación real de Colpensiones (tribunal, 2018), fórmula cerrada del saldo, esperanza de vida de la RV08, calendario de semanas | Idénticos (además, prueba automática del caso real) |
+| Referencias externas | Capital para una pensión mínima (330 SMMLV), semanas promedio al pensionarse (570), cobertura (18–30 %) | 309 SMMLV (≈330 con cónyuge), 660 semanas, 22 % |
+| Fuera de muestra | Salarios 2025 con modelo 2022–2024; tasas de cotización 2025 con 2023–2024; rentabilidades a 36 meses | Salarios y cotización: errores iguales a los de dentro de muestra. Rentabilidades: intervalos demasiado estrechos |
+| Monte Carlo | 20 semillas independientes | Error igual al binomial teórico |
+
+**Cambios hechos por la validación:**
+1. El test de capital suficiente usa el crecimiento regulatorio de beneficios (2,53 %) en lugar del 1 %.
+2. La incertidumbre de la media de las rentabilidades pasa al caso base.
+
+**Sin validar:**
+- contra los simuladores oficiales de doble asesoría (requieren datos personales);
+- la relación entre salario y densidad de cotización (el modelo no la tiene);
+- la tasa técnica y los beneficiarios que usan las AFP en la práctica.

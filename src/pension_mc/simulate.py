@@ -73,9 +73,10 @@ class Supuestos:
     metodo_rentabilidad: str = "bootstrap"     # "bootstrap" | "t" | "determinista"
     escenario_determinista: str = "base"       # "pesimista" | "base" | "optimista"
     ajuste_rentabilidad: float = 0.0           # puntos de rentabilidad real anual sobre la histórica
-    incertidumbre_media: bool = False
+    incertidumbre_media: bool = True           # base desde la validación fuera de muestra (paso 8)
     tasa_tecnica: float | None = None          # None: config (4 %)
-    crecimiento_smmlv: float | None = None     # None: config (1 %)
+    crecimiento_smmlv: float | None = None     # None: config (1 %); trayectoria del SMMLV
+    crecimiento_beneficios: float | None = None  # None: parámetro regulatorio para el capital suficiente (2,53 %)
     crecimiento_salarios: float | None = None  # None: config (1 %)
     cotizacion: str = "base"                   # clave de CALIBRACIONES_COTIZACION
     congelar_cotizacion_desde: float | None = None  # edad desde la que se mantiene la tasa de cotización
@@ -83,9 +84,13 @@ class Supuestos:
 
     def valor(self, nombre: str) -> float:
         v = getattr(self, nombre)
+        if v is not None:
+            return v
+        if nombre == "crecimiento_beneficios":
+            return parametros()["rais"]["crecimiento_beneficios_capital"]
         clave = {"tasa_tecnica": "tasa_tecnica_real", "crecimiento_smmlv": "crecimiento_real_smmlv",
                  "crecimiento_salarios": "crecimiento_real_productividad"}[nombre]
-        return parametros()["supuestos"][clave] if v is None else v
+        return parametros()["supuestos"][clave]
 
 
 @dataclass
@@ -255,7 +260,7 @@ def simular(perfil: Perfil, supuestos: Supuestos | None = None, n_sims: int = 10
     if perfil.conyuge_diferencia_edad is not None:
         conyuge = ("Hombre" if perfil.sexo == "Mujer" else "Mujer", edad_retiro + perfil.conyuge_diferencia_edad)
     afp = G.rais(trayectoria[:, -1], semanas, edad=edad_retiro, sexo=perfil.sexo, anio=anio_retiro,
-                 smmlv=smmlv[-1], tasa=sup.valor("tasa_tecnica"), crecimiento_smmlv=sup.valor("crecimiento_smmlv"),
+                 smmlv=smmlv[-1], tasa=sup.valor("tasa_tecnica"), crecimiento_beneficios=sup.valor("crecimiento_beneficios"),
                  conyuge=conyuge)
     col = G.rpm(ibc, cotiza, edad=edad_retiro, sexo=perfil.sexo, anio=anio_retiro, smmlv=smmlv[-1],
                 semanas_previas=perfil.semanas)

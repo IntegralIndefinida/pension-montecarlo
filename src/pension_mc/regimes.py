@@ -6,8 +6,8 @@ edad de pensión.
 
 **RAIS** (arts. 35, 64, 65 y 66):
 
-1. *Capital suficiente*: el saldo financia una pensión vitalicia de al menos 1 SMMLV que crece
-   con el SMMLV → mesada = saldo / F (indexada al IPC).
+1. *Capital suficiente*: el saldo financia una pensión vitalicia de al menos 1 SMMLV que crece al
+   ritmo regulatorio de los beneficios (Res. 3099 de 2015, art. 4) → mesada = saldo / F (indexada al IPC).
 2. *Garantía de pensión mínima*: si no, y tiene la edad y las semanas → mesada = 1 SMMLV; el
    Estado paga la diferencia (``costo_garantia``).
 3. *Devolución de saldos*: si no cumple ninguna → recibe el saldo.
@@ -51,13 +51,18 @@ def edad_pension(regimen: str, sexo: str) -> int:
 
 
 def rais(saldo: np.ndarray, semanas: np.ndarray, *, edad: float, sexo: str, anio: int, smmlv: float,
-         tasa: float | None = None, crecimiento_smmlv: float | None = None,
+         tasa: float | None = None, crecimiento_beneficios: float | None = None,
          conyuge: tuple[str, float] | None = None) -> pd.DataFrame:
-    """Resultado en el RAIS al pedir la pensión a ``edad`` en ``anio``, una fila por simulación."""
-    g = parametros()["supuestos"]["crecimiento_real_smmlv"] if crecimiento_smmlv is None else crecimiento_smmlv
+    """
+    Resultado en el RAIS al pedir la pensión a ``edad`` en ``anio``, una fila por simulación.
+
+    ``crecimiento_beneficios`` es el crecimiento real de la pensión mínima con el que la AFP verifica
+    el capital suficiente; por defecto, el parámetro regulatorio de ``parametros.yaml``.
+    """
+    g = parametros()["rais"]["crecimiento_beneficios_capital"] if crecimiento_beneficios is None else crecimiento_beneficios
     saldo, semanas = np.asarray(saldo, float), np.asarray(semanas, float)
     f = factor_anualidad(edad, sexo, tasa, 0.0, conyuge)
-    f_min = factor_anualidad(edad, sexo, tasa, g, conyuge)          # pensión mínima, crece con el SMMLV
+    f_min = factor_anualidad(edad, sexo, tasa, g, conyuge)          # pensión mínima, crece con los beneficios
     capital_minimo = smmlv * f_min
 
     suficiente = saldo >= capital_minimo

@@ -20,14 +20,14 @@ from functools import lru_cache
 import numpy as np
 import pandas as pd
 
-from .config import DATA_PROCESSED, parametros
+from .config import ARTEFACTOS, parametros
 
 EDAD_MAXIMA = 111
 
 
 @lru_cache(maxsize=None)
 def _lx(sexo: str) -> tuple[np.ndarray, np.ndarray]:
-    t = pd.read_parquet(DATA_PROCESSED / "mortalidad_rv08.parquet")
+    t = pd.read_parquet(ARTEFACTOS / "mortalidad_rv08.parquet")
     t = t[t["sexo"] == sexo.capitalize()].sort_values("edad")
     edades = np.r_[t["edad"].to_numpy(float), EDAD_MAXIMA]
     return edades, np.r_[t["lx"].to_numpy(float), 0.0]

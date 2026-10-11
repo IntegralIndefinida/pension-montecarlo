@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..config import DATA_PROCESSED, DATA_RAW
+from ..config import ARTEFACTOS, DATA_PROCESSED, DATA_RAW
 from ._http import descargar as _descargar
 
 URL = "https://www.fasecolda.com/wp-content/uploads/res-1555-2010.pdf"
@@ -64,4 +64,6 @@ def procesar(archivo: Path | None = None) -> pd.DataFrame:
     validar(df)
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
     df.to_parquet(DATA_PROCESSED / "mortalidad_rv08.parquet", index=False)
+    ARTEFACTOS.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(ARTEFACTOS / "mortalidad_rv08.parquet", index=False)
     return df

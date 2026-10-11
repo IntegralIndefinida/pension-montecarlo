@@ -72,7 +72,7 @@ saldo[t+1] = saldo[t] · (1 + r_fondo[t]) + 11,5 % · IBC[t] · cotiza[t] + apor
 
 | Vía | Requisito | Norma | Estado |
 |---|---|---|---|
-| **Capital suficiente** | Saldo que financie una pensión > **110 % del SMMLV de 1993 reajustado por IPC** a cualquier edad. Como ninguna pensión puede ser menor que 1 SMMLV (art. 35), en la práctica la AFP verifica si el saldo financia **1 SMMLV vitalicio** (Saldo de Pensión Mínima, Res. MinHacienda 3099 de 2015) | Arts. 35 y 64 Ley 100 | ✅ |
+| **Capital suficiente** | Saldo que financie una pensión > **110 % del SMMLV de 1993 reajustado por IPC** a cualquier edad. Como ninguna pensión puede ser menor que 1 SMMLV (art. 35), en la práctica la AFP verifica si el saldo financia **1 SMMLV vitalicio** (Saldo de Pensión Mínima, Res. MinHacienda 3099 de 2015), con el crecimiento regulatorio de beneficios de la Res. 1045 de 2026 (2,53 % real) | Arts. 35 y 64 Ley 100; Res. 3099 de 2015 y 1045 de 2026 | ✅ (el 2,53 % es cálculo propio con la definición de la norma) |
 | **Garantía de Pensión Mínima (GPM)** | Hombres: 62 años y 1.150 semanas. Mujeres: 57 años y semanas decrecientes (ver abajo). Si el saldo no alcanza, el Estado completa hasta 1 SMMLV | Art. 65 Ley 100 | ✅ (edades) |
 | **Devolución de saldos** | Si a la edad de pensión no cumple ninguna de las anteriores | Art. 66 Ley 100 | ✅ |
 

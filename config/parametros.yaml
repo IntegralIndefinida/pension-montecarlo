@@ -53,6 +53,12 @@ rais:
   capital_suficiente: "pension_minima_vitalicia"
   fuente_capital: "Ley 100 de 1993 arts. 35 y 64; Res. MinHacienda 3099 de 2015"
   estado_capital: verificado
+  # La AFP verifica la suficiencia con los parámetros del art. 4 de la Res. 3099 de 2015, entre ellos el
+  # crecimiento de los beneficios: promedio de los últimos 12 años de la diferencia entre el aumento del
+  # SMMLV y el IPC a diciembre anterior, sin el mayor ni el menor (Res. MinHacienda 1045 de 2026).
+  # 2015-2026 sin 2026 (17,9 %) ni 2016 (0,2 %): 2,53 %.
+  crecimiento_beneficios_capital: 0.0253
+  estado_crecimiento_beneficios: por_verificar   # calculado con IPC del DANE y decretos del SMMLV; sin revisar el piso de deslizamiento
   garantia_pension_minima:
     edad: {hombre: 62, mujer: 57}
     semanas_hombre: 1150
@@ -131,7 +137,7 @@ rentabilidades:                # opciones por defecto del modelo de rentabilidad
   afp: Protección
   metodo: bootstrap            # bootstrap | t | determinista
   largo_bloque: null           # null = óptimo de Politis-White (~1,4 meses con los datos actuales)
-  incertidumbre_media: false   # true en el análisis de sensibilidad
+  incertidumbre_media: true    # base desde el paso 8: la validación fuera de muestra mostró que sin ella el modelo es demasiado confiado
   media_objetivo: null         # p. ej. {moderado: 0.035}; null = media histórica
   calibracion:                 # Protección, feb-2016 a sep-2026 (notebooks/02_rentabilidades.ipynb)
     nu_t_multivariada: 4

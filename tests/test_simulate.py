@@ -1,14 +1,14 @@
-"""Pruebas del motor de simulación (requieren los modelos estimados en data/processed)."""
+"""Pruebas del motor de simulación (usan los modelos versionados en artefactos/)."""
 
 import numpy as np
 import pytest
 
-from pension_mc.config import DATA_PROCESSED
+from pension_mc.config import ARTEFACTOS
 
 necesita_modelos = pytest.mark.skipif(
-    not all((DATA_PROCESSED / f).exists() for f in ("modelo_salarial.json", "modelo_cotizacion.json",
-                                                     "rentabilidad_mensual.parquet", "mortalidad_rv08.parquet")),
-    reason="requiere los modelos y datos procesados")
+    not all((ARTEFACTOS / f).exists() for f in ("modelo_salarial.json", "modelo_cotizacion.json",
+                                                 "rentabilidad_mensual.parquet", "mortalidad_rv08.parquet")),
+    reason="requiere los artefactos del modelo")
 
 N = 800
 

@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Instalar (motor + pruebas; sin GEIH ni dane-data)
+        run: pip install -e ".[dev]"
+      - name: Pruebas
+        run: pytest -q
+      - name: Simulación de humo
+        run: |
+          python - <<'PY'
+          from pension_mc.simulate import Perfil, simular
+          r = simular(Perfil(edad=30, sexo="Mujer", educacion="Superior", salario=3_500_000,
+                             semanas=250, cotiza_hoy=True), n_sims=2_000)
+          print(r.resumen().round(3).to_string())
+          assert 0 < r.resumen().afp_p_pension <= 1
+          PY

@@ -8,7 +8,7 @@ python -m pension_mc.data --solo ipc      # un paso
 python -m pension_mc.data --force         # repetir descargas
 ```
 
-Los archivos crudos quedan en `data/raw/` y los procesados en `data/processed/` (Parquet). Ninguno de los dos se versiona.
+Los archivos crudos quedan en `data/raw/` y los procesados en `data/processed/` (Parquet). Ninguno de los dos se versiona. Los modelos estimados y las dos series pequeñas que usa el motor (rentabilidades mensuales y RV08) se guardan además en `artefactos/`, que sí se versiona (ver `artefactos/README.md`).
 
 ## Fuentes
 

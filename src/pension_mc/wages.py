@@ -31,7 +31,7 @@ import numpy as np
 import pandas as pd
 from scipy import optimize, special, stats
 
-from .config import DATA_PROCESSED, parametros
+from .config import ARTEFACTOS, DATA_PROCESSED, parametros
 
 EDUCACION = {"Ninguno": "Primaria o menos", "Primaria": "Primaria o menos", "Secundaria": "Secundaria",
              "Media": "Media", "Superior": "Superior"}
@@ -41,7 +41,7 @@ EDAD_MIN, EDAD_MAX = 18, 65
 EDAD_ENTRADA = 17          # z = 0 antes de entrar al mercado laboral
 UMBRAL_CENSURA = 1.05      # un salario declarado <= 1,05 SMMLV se trata como "gana el mínimo"
 HOLGURA_AUXILIO = 0.02     # en la GEIH: ingreso <= (1 + auxilio/SMMLV + 0,02) SMMLV gana el mínimo
-ARCHIVO = DATA_PROCESSED / "modelo_salarial.json"
+ARCHIVO = ARTEFACTOS / "modelo_salarial.json"
 
 
 def _e(edad):
@@ -246,8 +246,8 @@ class ModeloSalarial:
 
 
 def estimar(geih: pd.DataFrame | None = None, ipc: pd.DataFrame | None = None,
-            edades_ajuste=range(20, 65)) -> ModeloSalarial:
-    """Estima el Tobit y los parámetros (σα, σε, ρ) por tipo, y guarda el modelo."""
+            edades_ajuste=range(20, 65), guardar: bool = True) -> ModeloSalarial:
+    """Estima el Tobit y los parámetros (σα, σε, ρ) por tipo, y guarda el modelo (si ``guardar``)."""
     geih = pd.read_parquet(DATA_PROCESSED / "geih_pensiones.parquet") if geih is None else geih
     ipc = pd.read_parquet(DATA_PROCESSED / "ipc_mensual.parquet") if ipc is None else ipc
     d = muestra(geih, ipc)
@@ -263,7 +263,8 @@ def estimar(geih: pd.DataFrame | None = None, ipc: pd.DataFrame | None = None,
     edades = np.asarray(list(edades_ajuste))
     for e, s in _tipos():
         m.ar[clave(e, s)] = ajustar_ar(edades, m.sigma(edades, s, e) ** 2)
-    m.guardar()
+    if guardar:
+        m.guardar()
     return m
 
 
