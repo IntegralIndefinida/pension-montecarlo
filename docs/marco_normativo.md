@@ -72,7 +72,7 @@ saldo[t+1] = saldo[t] · (1 + r_fondo[t]) + 11,5 % · IBC[t] · cotiza[t] + apor
 
 | Vía | Requisito | Norma | Estado |
 |---|---|---|---|
-| **Capital suficiente** | Saldo que financie una pensión ≥ **110 % del SMMLV** a cualquier edad | Art. 64 Ley 100 | ✅ |
+| **Capital suficiente** | Saldo que financie una pensión > **110 % del SMMLV de 1993 reajustado por IPC** a cualquier edad. Como ninguna pensión puede ser menor que 1 SMMLV (art. 35), en la práctica la AFP verifica si el saldo financia **1 SMMLV vitalicio** (Saldo de Pensión Mínima, Res. MinHacienda 3099 de 2015) | Arts. 35 y 64 Ley 100 | ✅ |
 | **Garantía de Pensión Mínima (GPM)** | Hombres: 62 años y 1.150 semanas. Mujeres: 57 años y semanas decrecientes (ver abajo). Si el saldo no alcanza, el Estado completa hasta 1 SMMLV | Art. 65 Ley 100 | ✅ (edades) |
 | **Devolución de saldos** | Si a la edad de pensión no cumple ninguna de las anteriores | Art. 66 Ley 100 | ✅ |
 
@@ -105,10 +105,11 @@ Se implementa como **referencia de comparación** (beneficio definido, sin cuent
 |---|---|---|---|
 | Edad | Hombres 62, mujeres 57 | Art. 33 Ley 100 (Ley 797 de 2003) | ✅ |
 | Semanas, hombres | 1.300 | Ídem | ✅ |
-| Semanas, mujeres | 1.250 en 2026, bajando 25 por año hasta 1.000 en 2036 | Sentencia C-197 de 2023 | ⚠️ |
-| IBL | Promedio de los salarios de los últimos 10 años, actualizados por IPC (o de toda la vida laboral si es más favorable y tiene ≥ 1.250 semanas) | Art. 21 Ley 100 | ⚠️ |
-| Tasa de reemplazo | `r = 65,50 − 0,50 · s`, con `s = IBL / SMMLV`; +1,5 puntos por cada 50 semanas adicionales al mínimo; máximo entre 80 % y 70,5 % | Art. 34 Ley 100 (Ley 797 de 2003) | ⚠️ |
-| Pensión mínima / máxima | 1 SMMLV / 25 SMMLV | | ⚠️ |
+| Semanas, mujeres | 1.250 en 2026 (−50), luego −25 por año hasta 1.000 en 2036 | Sentencia C-197 de 2023 (cita de la parte resolutiva en Colpensiones) | ✅ |
+| IBL | Promedio de los salarios de los últimos 10 años, actualizados por IPC (o de toda la vida laboral si es más favorable y tiene ≥ 1.250 semanas) | Art. 21 Ley 100 | ✅ |
+| Tasa de reemplazo | `r = 65,50 − 0,50 · s` (entre 55 % y 65 %), con `s = IBL / SMMLV`; +1,5 puntos por cada 50 semanas adicionales al mínimo; máximo entre 80 % y 70,5 % | Art. 34 Ley 100 (Ley 797 de 2003) | ✅ |
+| Pensión mínima / máxima | 1 SMMLV (art. 35) / 25 SMMLV | Art. 35 Ley 100 | ✅ |
+| Indemnización sustitutiva | IBC semanal promedio × semanas × promedio ponderado de % de cotización (se usa 13 %) | Art. 37 Ley 100; Decreto 1730 de 2001 | ⚠️ (porcentaje) |
 
 **Semanas de las mujeres en el RPM** (según la tabla publicada por Porvenir y la prensa):
 
@@ -116,7 +117,7 @@ Se implementa como **referencia de comparación** (beneficio definido, sin cuent
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Semanas | 1.250 | 1.225 | 1.200 | 1.175 | 1.150 | 1.125 | 1.100 | 1.075 | 1.050 | 1.025 | 1.000 |
 
-⚠️ Un artículo de Portafolio menciona 1.275 para 2026. Confirmar con Colpensiones.
+✅ Confirmado: la cifra de 1.275 que publicó Portafolio no corresponde a la sentencia (−50 en 2026, no −25).
 
 ---
 
@@ -204,11 +205,11 @@ Todas estas exclusiones se declaran en la pestaña de metodología de la app.
 - [ ] Texto oficial de la Ley 2381 de 2024: fórmula del componente de prima media y reparto de la cotización.
 - [x] Decreto 2555 de 2010, arts. 2.6.11.1.5 y 2.6.11.1.6: tablas de asignación por defecto y convergencia de multifondos.
 - [ ] Resolución 1555 de 2010: descargar la tabla RV08 y confirmar que sigue vigente.
-- [ ] Semanas de las mujeres (RAIS 2026: 1.135; RPM 2026: 1.250): confirmar con la Superfinanciera / Colpensiones.
+- [x] Semanas de las mujeres en Colpensiones (1.250 en 2026, −25 por año hasta 1.000 en 2036). Pendiente: el calendario de la AFP (1.135 en 2026, −15 por año).
 - [ ] SMMLV 2026: confirmar la vigencia del Decreto 0159 de 2026.
-- [ ] Art. 34 Ley 100: texto exacto de la tasa de reemplazo del RPM.
+- [x] Arts. 21, 34, 35, 37, 64, 65 y 66 de la Ley 100: texto compilado de la Secretaría del Senado.
 - [ ] Art. 27 Ley 100: escala exacta del FSP.
-- [ ] Tasa técnica para renta vitalicia.
+- [ ] Tasa técnica para renta vitalicia (la Res. MinHacienda 3099 de 2015 la define, pero las fórmulas compiladas están como imagen). Supuesto: 4 % real.
 
 ---
 
@@ -227,4 +228,6 @@ Todas estas exclusiones se declaran en la pestaña de metodología de la app.
 - Corte Constitucional, [Sentencia C-054 de 2024](https://ambitojuridico.com/sites/default/files/2024-05/Sent-C-054-24.pdf)
 - La Nota Económica / Porvenir, [Cambio de semanas para mujeres desde 2026](https://lanotaeconomica.com.co/movidas-empresarial/porvenir-explica-como-cambiaran-los-requisitos-de-semanas-para-pension-de-vejez-de-mujeres-a-partir-de-2026/)
 - El Heraldo, [Entra en vigor reducción de semanas para mujeres desde 2026](https://www.elheraldo.co/colombia/2026/01/02/entra-en-vigor-reduccion-de-semanas-para-la-pension-de-mujeres-desde-2026-asi-funcionara/)
+- Secretaría del Senado, [Ley 100 de 1993 compilada](http://www.secretariasenado.gov.co/senado/basedoc/ley_0100_1993.html)
+- MinHacienda, [Resolución 3099 de 2015 (Saldo de Pensión Mínima)](https://normativa.colpensiones.gov.co/compilacion/docs/resolucion_minhacienda_3099_2015.htm) y [Resolución 1045 de 2026](https://normativa.colpensiones.gov.co/compilacion/docs/resolucion_minhacienda_1045_2026.htm)
 - Siempre al Día, [Salario mínimo 2026](https://siemprealdia.co/colombia/derecho-laboral/salario-minimo-2026/)

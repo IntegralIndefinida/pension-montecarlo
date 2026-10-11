@@ -202,3 +202,64 @@ En todas las variantes que respetan la antigüedad (rotación 0,79–0,88, durac
 - Las tasas son de corte transversal: no hay tendencia de formalización ni efectos de cohorte.
 - $\eta$ no está correlacionado con el salario del paso 4.
 - No se distingue entre asalariados e independientes (más rotación, IBC del 40 %).
+
+## 4. Acumulación, mesada y reglas de pensión
+
+Módulos `pension_mc.accumulation`, `pension_mc.decumulation` y `pension_mc.regimes`. Ejemplos en [`notebooks/05_pension.ipynb`](../notebooks/05_pension.ipynb).
+
+### Acumulación (AFP)
+
+En pesos reales, con el aporte al final del mes:
+
+$$
+S_t = S_{t-1}(1 + r_t) + c_t\,(0{,}115 \cdot \text{IBC}_t + v_t)
+$$
+
+$r_t$ es la rentabilidad real del portafolio de multifondos (paso 3), $c_t$ el indicador de cotización (paso 5), el IBC sale del salario (paso 4) y $v_t$ es un aporte voluntario opcional.
+
+### De saldo a mesada
+
+Capital necesario por cada peso de mesada, con 13 mesadas al año como 12 pagos anticipados de 13/12:
+
+$$
+F(x) = \frac{13}{12}\sum_{m \ge 0} \left(\frac{1+g}{1+i}\right)^{m/12} {}_{m/12}p_x
+$$
+
+- Tablas RV08 con supervivencia interpolada linealmente entre edades enteras.
+- $i$: tasa técnica real (4 %, supuesto).
+- $g$: crecimiento real de la mesada: 0 para pensiones indexadas al IPC y el crecimiento del SMMLV para la pensión mínima.
+- Con cónyuge beneficiario (100 %): ${}_tp = {}_tp_x + {}_tp_y - {}_tp_x\,{}_tp_y$.
+
+Verificación: con $i = 0$, $F \cdot 12/13/12$ coincide con la esperanza de vida de la RV08.
+
+### Reglas en las AFP
+
+| Situación al llegar a la edad de pensión | Resultado |
+|---|---|
+| $S \ge \text{SMMLV} \cdot F(x; g = g_{\text{SMMLV}})$ | Capital suficiente: mesada $= S / F(x; 0)$ |
+| Si no, con la edad y las semanas de la garantía de pensión mínima | Mesada = 1 SMMLV; el Estado paga $\text{SMMLV} \cdot F - S$ |
+| En otro caso | Devolución de saldos |
+
+**Sobre el art. 64.** El texto exige capital para una pensión mayor al 110 % del SMMLV **de 1993 reajustado por IPC**, umbral muy inferior al SMMLV actual. Como ninguna pensión puede ser menor que el mínimo (art. 35), la AFP verifica con el Saldo de Pensión Mínima si el saldo financia 1 SMMLV vitalicio (Res. MinHacienda 3099 de 2015, modificada por la 3023 de 2017). Esa es la regla que se implementa.
+
+### Reglas en Colpensiones
+
+Con la edad y las semanas:
+- **Mesada:** $\text{mesada} = \min(r + 1{,}5 \lfloor (\text{sem} - \text{sem}_{\min})/50 \rfloor,\; r + 15,\; 80)\% \cdot \text{IBL}$, con $r = \text{clip}(65{,}5 - 0{,}5\,s,\; 55,\; 65)$ y $s = \text{IBL}/\text{SMMLV}$. Piso de 1 SMMLV y tope de 25 SMMLV.
+- **IBL:** promedio real del IBC de los últimos 120 meses cotizados, o de toda la vida si es mayor y hay ≥ 1.250 semanas.
+
+Sin las semanas: indemnización sustitutiva = IBC semanal promedio × semanas × 13 %.
+
+### Requisitos de semanas por año
+
+| | Hombres | Mujeres |
+|---|---|---|
+| Garantía de pensión mínima (AFP) | 1.150 | 1.150 hasta 2025; 1.135 en 2026 y −15 por año hasta 1.000 (C-054 de 2024) |
+| Colpensiones | 1.300 | 1.300 hasta 2025; 1.250 en 2026 y −25 por año hasta 1.000 en 2036 (C-197 de 2023) |
+
+### Simplificaciones
+
+- **Sin beneficiarios por defecto** (opcional con `conyuge`). Para un hombre con cónyuge 3 años menor el capital necesario sube ~29 %, así que la mesada sin beneficiarios es una cota superior.
+- **Renta vitalicia** valorada a la tasa técnica: no se simula el retiro programado año a año.
+- **Sin bono pensional ni traslados** entre regímenes.
+- **Perfiles con historia:** el saldo actual lo informa la persona (o se aproxima con las semanas), y el IBL de Colpensiones usa solo el periodo simulado.

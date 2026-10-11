@@ -46,28 +46,37 @@ fondo_solidaridad_pensional:   # aporte adicional al 16 %, no entra a la cuenta 
   estado: por_verificar
 
 rais:
-  capital_suficiente_pct_smmlv: 1.10
-  fuente_capital: "Ley 100 de 1993 art. 64"
+  # Art. 64: capital para una pensión > 110 % del SMMLV de 1993 reajustado por IPC (umbral muy por
+  # debajo del SMMLV actual). Como ninguna pensión puede ser menor a 1 SMMLV (art. 35), la AFP
+  # verifica si el saldo financia una pensión vitalicia de 1 SMMLV (Saldo de Pensión Mínima,
+  # Res. MinHacienda 3099 de 2015, modificada por la 3023 de 2017).
+  capital_suficiente: "pension_minima_vitalicia"
+  fuente_capital: "Ley 100 de 1993 arts. 35 y 64; Res. MinHacienda 3099 de 2015"
+  estado_capital: verificado
   garantia_pension_minima:
     edad: {hombre: 62, mujer: 57}
     semanas_hombre: 1150
-    semanas_mujer:             # C-054 de 2024: -15 por año desde 2026 hasta 1000
-      inicial: 1150
-      anio_inicio_reduccion: 2026
+    semanas_mujer:             # C-054 de 2024: 1150 hasta 2025; -15 por año desde 2026 hasta 1000
+      hasta_2025: 1150
+      anio_base: 2026
+      valor_base: 1135
       reduccion_anual: 15
       minimo: 1000
     fuente: "Ley 100 de 1993 art. 65; Sentencia C-054 de 2024"
-    estado: por_verificar      # tabla derivada de la regla de la sentencia
-  mesadas_por_anio: 13
+    estado: por_verificar      # calendario derivado de la regla de la sentencia
+  mesadas_por_anio: 13         # Acto Legislativo 01 de 2005
 
 rpm:
   edad: {hombre: 62, mujer: 57}
   semanas_hombre: 1300
-  semanas_mujer:               # C-197 de 2023: -25 por año desde 2026 hasta 1000
-    inicial_2025: 1300
-    anio_inicio_reduccion: 2026
+  semanas_mujer:               # C-197 de 2023: -50 en 2026 y -25 por año desde 2027 hasta 1000 (2036)
+    hasta_2025: 1300
+    anio_base: 2026
+    valor_base: 1250
     reduccion_anual: 25
     minimo: 1000
+  semanas_ibl_toda_la_vida: 1250  # art. 21: IBL de toda la vida si es mayor y hay >= 1250 semanas
+  indemnizacion_pct: 0.13      # art. 37: promedio ponderado de % de cotización (vejez); por verificar
   ibl_anios: 10
   tasa_reemplazo:              # r = base - pendiente * (IBL/SMMLV), en %
     base: 65.50
@@ -79,8 +88,8 @@ rpm:
     maximo_techo: 80.0
   pension_min_smmlv: 1
   pension_max_smmlv: 25
-  fuente: "Ley 100 de 1993 arts. 21, 33, 34 (Ley 797 de 2003); Sentencia C-197 de 2023"
-  estado: por_verificar
+  fuente: "Ley 100 de 1993 arts. 21, 33, 34, 35 y 37 (texto compilado, Secretaría del Senado); Sentencia C-197 de 2023"
+  estado: verificado           # salvo indemnizacion_pct
 
 reforma_2381:
   vigencia_desde: 2027-04-01
