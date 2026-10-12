@@ -17,8 +17,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - name: Instalar (motor + pruebas; sin GEIH ni dane-data)
-        run: pip install -e ".[dev]"
+      - name: Instalar (motor, app y pruebas; sin GEIH ni dane-data)
+        run: pip install -e ".[dev,app]"
       - name: Pruebas
         run: pytest -q
       - name: Simulación de humo
